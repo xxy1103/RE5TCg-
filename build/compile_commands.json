@@ -1,12 +1,6 @@
 [
 {
   "directory": "D:/windows/desktop/DNS/my_DNS/build",
-  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\datagram\\datagram.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\datagram\\datagram.c",
-  "file": "D:/windows/desktop/DNS/my_DNS/src/datagram/datagram.c",
-  "output": "CMakeFiles/my_DNS.dir/src/datagram/datagram.c.obj"
-},
-{
-  "directory": "D:/windows/desktop/DNS/my_DNS/build",
   "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\debug\\debug.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\debug\\debug.c",
   "file": "D:/windows/desktop/DNS/my_DNS/src/debug/debug.c",
   "output": "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj"
@@ -16,6 +10,18 @@
   "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\main.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\main.c",
   "file": "D:/windows/desktop/DNS/my_DNS/src/main.c",
   "output": "CMakeFiles/my_DNS.dir/src/main.c.obj"
+},
+{
+  "directory": "D:/windows/desktop/DNS/my_DNS/build",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\websocket\\datagram.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\websocket\\datagram.c",
+  "file": "D:/windows/desktop/DNS/my_DNS/src/websocket/datagram.c",
+  "output": "CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj"
+},
+{
+  "directory": "D:/windows/desktop/DNS/my_DNS/build",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\websocket\\dnServer.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\websocket\\dnServer.c",
+  "file": "D:/windows/desktop/DNS/my_DNS/src/websocket/dnServer.c",
+  "output": "CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj"
 },
 {
   "directory": "D:/windows/desktop/DNS/my_DNS/build",

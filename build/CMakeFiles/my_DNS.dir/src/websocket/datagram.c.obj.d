@@ -1,6 +1,6 @@
-CMakeFiles/my_DNS.dir/src/datagram/datagram.c.obj: \
- D:\windows\desktop\DNS\my_DNS\src\datagram\datagram.c \
- D:/windows/desktop/DNS/my_DNS/include/datagram/datagram.h \
+CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj: \
+ D:\windows\desktop\DNS\my_DNS\src\websocket\datagram.c \
+ D:/windows/desktop/DNS/my_DNS/include/websocket/datagram.h \
  D:/msys64/mingw64/include/winsock2.h \
  D:/msys64/mingw64/include/_mingw_unicode.h \
  D:/msys64/mingw64/include/windows.h D:/msys64/mingw64/include/_mingw.h \

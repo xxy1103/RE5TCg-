@@ -84,12 +84,12 @@ clean: CMakeFiles/my_DNS.dir/clean
 CMakeFiles/my_DNS.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=1,2,3,4,5 "Built target my_DNS"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=1,2,3,4,5,6 "Built target my_DNS"
 .PHONY : CMakeFiles/my_DNS.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/my_DNS.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start D:\windows\desktop\DNS\my_DNS\build\CMakeFiles 5
+	$(CMAKE_COMMAND) -E cmake_progress_start D:\windows\desktop\DNS\my_DNS\build\CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 CMakeFiles/my_DNS.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start D:\windows\desktop\DNS\my_DNS\build\CMakeFiles 0
 .PHONY : CMakeFiles/my_DNS.dir/rule
@@ -101,7 +101,7 @@ my_DNS: CMakeFiles/my_DNS.dir/rule
 # codegen rule for target.
 CMakeFiles/my_DNS.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=1,2,3,4,5 "Finished codegen for target my_DNS"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=1,2,3,4,5,6 "Finished codegen for target my_DNS"
 .PHONY : CMakeFiles/my_DNS.dir/codegen
 
 # clean rule for target.

@@ -263,7 +263,7 @@ CMakeFiles/my_DNS.dir/src/main.c.obj: \
  D:/msys64/mingw64/include/sec_api/sys/timeb_s.h \
  D:/msys64/mingw64/include/pthread_time.h \
  D:/msys64/mingw64/include/pthread_compat.h \
- D:/windows/desktop/DNS/my_DNS/include/datagram/datagram.h \
+ D:/windows/desktop/DNS/my_DNS/include/websocket/datagram.h \
  D:/msys64/mingw64/include/ws2tcpip.h \
  D:/msys64/mingw64/include/ws2ipdef.h D:/msys64/mingw64/include/in6addr.h \
  D:/msys64/mingw64/include/psdk_inc/_ip_mreq1.h \

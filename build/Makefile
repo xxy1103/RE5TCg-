@@ -128,30 +128,6 @@ my_DNS/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/build
 .PHONY : my_DNS/fast
 
-src/datagram/datagram.obj: src/datagram/datagram.c.obj
-.PHONY : src/datagram/datagram.obj
-
-# target to build an object file
-src/datagram/datagram.c.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/datagram/datagram.c.obj
-.PHONY : src/datagram/datagram.c.obj
-
-src/datagram/datagram.i: src/datagram/datagram.c.i
-.PHONY : src/datagram/datagram.i
-
-# target to preprocess a source file
-src/datagram/datagram.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/datagram/datagram.c.i
-.PHONY : src/datagram/datagram.c.i
-
-src/datagram/datagram.s: src/datagram/datagram.c.s
-.PHONY : src/datagram/datagram.s
-
-# target to generate assembly for a file
-src/datagram/datagram.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/datagram/datagram.c.s
-.PHONY : src/datagram/datagram.c.s
-
 src/debug/debug.obj: src/debug/debug.c.obj
 .PHONY : src/debug/debug.obj
 
@@ -200,6 +176,54 @@ src/main.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/main.c.s
 .PHONY : src/main.c.s
 
+src/websocket/datagram.obj: src/websocket/datagram.c.obj
+.PHONY : src/websocket/datagram.obj
+
+# target to build an object file
+src/websocket/datagram.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj
+.PHONY : src/websocket/datagram.c.obj
+
+src/websocket/datagram.i: src/websocket/datagram.c.i
+.PHONY : src/websocket/datagram.i
+
+# target to preprocess a source file
+src/websocket/datagram.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/datagram.c.i
+.PHONY : src/websocket/datagram.c.i
+
+src/websocket/datagram.s: src/websocket/datagram.c.s
+.PHONY : src/websocket/datagram.s
+
+# target to generate assembly for a file
+src/websocket/datagram.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/datagram.c.s
+.PHONY : src/websocket/datagram.c.s
+
+src/websocket/dnServer.obj: src/websocket/dnServer.c.obj
+.PHONY : src/websocket/dnServer.obj
+
+# target to build an object file
+src/websocket/dnServer.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj
+.PHONY : src/websocket/dnServer.c.obj
+
+src/websocket/dnServer.i: src/websocket/dnServer.c.i
+.PHONY : src/websocket/dnServer.i
+
+# target to preprocess a source file
+src/websocket/dnServer.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.i
+.PHONY : src/websocket/dnServer.c.i
+
+src/websocket/dnServer.s: src/websocket/dnServer.c.s
+.PHONY : src/websocket/dnServer.s
+
+# target to generate assembly for a file
+src/websocket/dnServer.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.s
+.PHONY : src/websocket/dnServer.c.s
+
 src/websocket/websocket.obj: src/websocket/websocket.c.obj
 .PHONY : src/websocket/websocket.obj
 
@@ -233,15 +257,18 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... my_DNS
-	@echo ... src/datagram/datagram.obj
-	@echo ... src/datagram/datagram.i
-	@echo ... src/datagram/datagram.s
 	@echo ... src/debug/debug.obj
 	@echo ... src/debug/debug.i
 	@echo ... src/debug/debug.s
 	@echo ... src/main.obj
 	@echo ... src/main.i
 	@echo ... src/main.s
+	@echo ... src/websocket/datagram.obj
+	@echo ... src/websocket/datagram.i
+	@echo ... src/websocket/datagram.s
+	@echo ... src/websocket/dnServer.obj
+	@echo ... src/websocket/dnServer.i
+	@echo ... src/websocket/dnServer.s
 	@echo ... src/websocket/websocket.obj
 	@echo ... src/websocket/websocket.i
 	@echo ... src/websocket/websocket.s

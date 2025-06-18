@@ -8,9 +8,10 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "D:/windows/desktop/DNS/my_DNS/src/datagram/datagram.c" "CMakeFiles/my_DNS.dir/src/datagram/datagram.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/datagram/datagram.c.obj.d"
   "D:/windows/desktop/DNS/my_DNS/src/debug/debug.c" "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj.d"
   "D:/windows/desktop/DNS/my_DNS/src/main.c" "CMakeFiles/my_DNS.dir/src/main.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/main.c.obj.d"
+  "D:/windows/desktop/DNS/my_DNS/src/websocket/datagram.c" "CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj.d"
+  "D:/windows/desktop/DNS/my_DNS/src/websocket/dnServer.c" "CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj.d"
   "D:/windows/desktop/DNS/my_DNS/src/websocket/websocket.c" "CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj.d"
   )
 
