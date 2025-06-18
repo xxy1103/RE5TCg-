@@ -2,7 +2,7 @@
 
 //全局变量定义
 WSADATA wsaData;
-struct sockaddr_in dest;
+struct sockaddr_in upstream_addr;
 
 
 int initSystem()
@@ -13,24 +13,19 @@ int initSystem()
     }
 
     // 设置目标地址结构 (Google DNS Server)
-    dest.sin_family = AF_INET; // 地址族为 IPv4
-    dest.sin_port = htons(DNS_PORT); // 设置 DNS 端口号，并转换为主机字节序到网络字节序
-    dest.sin_addr.s_addr = inet_addr(DNS_SERVER); // 设置 DNS 服务器的 IP 地址
+    upstream_addr.sin_family = AF_INET; // 地址族为 IPv4
+    upstream_addr.sin_port = htons(DNS_PORT); // 设置 DNS 端口号，并转换为主机字节序到网络字节序
+    upstream_addr.sin_addr.s_addr = inet_addr(DNS_SERVER); // 设置 DNS 服务器的 IP 地址
     return MYSUCCESS; // 成功，返回成功
 }
 
 
 
 
-SOCKET sendDnsRequest(const char* hostname, unsigned short qtype)
+SOCKET sendDnsRequest(SOCKET sock, const char* hostname, unsigned short qtype)
 {
     char buf[BUF_SIZE];      // 用于发送数据的缓冲区
     
-    // 创建 UDP socket
-    SOCKET sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (sock == INVALID_SOCKET) {
-        return INVALID_SOCKET; // 创建失败，返回无效socket
-    }
     
     // 使用DNS_ENTITY创建DNS查询
     DNS_ENTITY* dns_query = create_dns_query(hostname, qtype);
@@ -51,7 +46,7 @@ SOCKET sendDnsRequest(const char* hostname, unsigned short qtype)
     free_dns_entity(dns_query);
 
     // 使用 sendto 函数通过 UDP 发送数据
-    if (sendto(sock, buf, query_len, 0, (struct sockaddr *)&dest, sizeof(dest)) == SOCKET_ERROR) {
+    if (sendto(sock, buf, query_len, 0, (struct sockaddr *)&upstream_addr, sizeof(upstream_addr)) == SOCKET_ERROR) {
         printf("sendto failed with error: %d\n", WSAGetLastError());
         closesocket(sock); // 关闭 socket
         return INVALID_SOCKET; // 发送失败，返回无效socket
@@ -160,19 +155,6 @@ int parseDnsResponse(SOCKET sock)
     free_dns_entity(dns_response);
     closesocket(sock); // 关闭 socket
     return MYSUCCESS; // 返回成功状态
-}
-
-int sendDnsQuery(const char* hostname, unsigned short qtype)
-{
-    // 发送DNS请求
-    SOCKET sock = sendDnsRequest(hostname, qtype);
-    if (sock == INVALID_SOCKET) {
-        return MYERROR;
-    }
-
-    // 由于我们现在使用ENTITY结构，不需要重新计算查询长度
-    // parseDnsResponse函数现在不依赖query_len参数
-    return parseDnsResponse(sock);
 }
 
 void cleanupSystem()

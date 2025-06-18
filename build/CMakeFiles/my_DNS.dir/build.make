@@ -116,20 +116,20 @@ CMakeFiles/my_DNS.dir/src/websocket/datagram.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/my_DNS.dir/src/websocket/datagram.c.s"
 	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S D:\windows\desktop\DNS\my_DNS\src\websocket\datagram.c -o CMakeFiles\my_DNS.dir\src\websocket\datagram.c.s
 
-CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj: CMakeFiles/my_DNS.dir/flags.make
-CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj: CMakeFiles/my_DNS.dir/includes_C.rsp
-CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj: D:/windows/desktop/DNS/my_DNS/src/websocket/dnServer.c
-CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj: CMakeFiles/my_DNS.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj"
-	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj -MF CMakeFiles\my_DNS.dir\src\websocket\dnServer.c.obj.d -o CMakeFiles\my_DNS.dir\src\websocket\dnServer.c.obj -c D:\windows\desktop\DNS\my_DNS\src\websocket\dnServer.c
+CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj: CMakeFiles/my_DNS.dir/flags.make
+CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj: CMakeFiles/my_DNS.dir/includes_C.rsp
+CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj: D:/windows/desktop/DNS/my_DNS/src/websocket/dnsServer.c
+CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj: CMakeFiles/my_DNS.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj"
+	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj -MF CMakeFiles\my_DNS.dir\src\websocket\dnsServer.c.obj.d -o CMakeFiles\my_DNS.dir\src\websocket\dnsServer.c.obj -c D:\windows\desktop\DNS\my_DNS\src\websocket\dnsServer.c
 
-CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.i"
-	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E D:\windows\desktop\DNS\my_DNS\src\websocket\dnServer.c > CMakeFiles\my_DNS.dir\src\websocket\dnServer.c.i
+CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.i"
+	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E D:\windows\desktop\DNS\my_DNS\src\websocket\dnsServer.c > CMakeFiles\my_DNS.dir\src\websocket\dnsServer.c.i
 
-CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.s"
-	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S D:\windows\desktop\DNS\my_DNS\src\websocket\dnServer.c -o CMakeFiles\my_DNS.dir\src\websocket\dnServer.c.s
+CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.s"
+	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S D:\windows\desktop\DNS\my_DNS\src\websocket\dnsServer.c -o CMakeFiles\my_DNS.dir\src\websocket\dnsServer.c.s
 
 CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj: CMakeFiles/my_DNS.dir/flags.make
 CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj: CMakeFiles/my_DNS.dir/includes_C.rsp
@@ -151,7 +151,7 @@ my_DNS_OBJECTS = \
 "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj" \
 "CMakeFiles/my_DNS.dir/src/main.c.obj" \
 "CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj" \
-"CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj" \
+"CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj" \
 "CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj"
 
 # External object files for target my_DNS
@@ -160,7 +160,7 @@ my_DNS_EXTERNAL_OBJECTS =
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/src/debug/debug.c.obj
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/src/main.c.obj
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj
-bin/my_DNS.exe: CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj
+bin/my_DNS.exe: CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/build.make
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/linkLibs.rsp

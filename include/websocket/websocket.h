@@ -16,12 +16,11 @@
 
 //全局变量声明
 extern WSADATA wsaData;
-extern struct sockaddr_in dest;
+extern struct sockaddr_in upstream_addr;
 
 // 函数声明
 int initSystem();
-SOCKET sendDnsRequest(const char* hostname, unsigned short qtype);
-int sendDnsQuery(const char* hostname, unsigned short qtype);
+SOCKET sendDnsRequest(SOCKET sock, const char* hostname, unsigned short qtype);
 int parseDnsResponse(SOCKET sock);
 void cleanupSystem();
 

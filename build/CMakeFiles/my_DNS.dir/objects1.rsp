@@ -1,1 +1,1 @@
-CMakeFiles/my_DNS.dir/src/debug/debug.c.obj CMakeFiles/my_DNS.dir/src/main.c.obj CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj
+CMakeFiles/my_DNS.dir/src/debug/debug.c.obj CMakeFiles/my_DNS.dir/src/main.c.obj CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj

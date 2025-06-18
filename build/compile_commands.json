@@ -19,9 +19,9 @@
 },
 {
   "directory": "D:/windows/desktop/DNS/my_DNS/build",
-  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\websocket\\dnServer.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\websocket\\dnServer.c",
-  "file": "D:/windows/desktop/DNS/my_DNS/src/websocket/dnServer.c",
-  "output": "CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj"
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\websocket\\dnsServer.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\websocket\\dnsServer.c",
+  "file": "D:/windows/desktop/DNS/my_DNS/src/websocket/dnsServer.c",
+  "output": "CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj"
 },
 {
   "directory": "D:/windows/desktop/DNS/my_DNS/build",

@@ -200,29 +200,29 @@ src/websocket/datagram.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/datagram.c.s
 .PHONY : src/websocket/datagram.c.s
 
-src/websocket/dnServer.obj: src/websocket/dnServer.c.obj
-.PHONY : src/websocket/dnServer.obj
+src/websocket/dnsServer.obj: src/websocket/dnsServer.c.obj
+.PHONY : src/websocket/dnsServer.obj
 
 # target to build an object file
-src/websocket/dnServer.c.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.obj
-.PHONY : src/websocket/dnServer.c.obj
+src/websocket/dnsServer.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj
+.PHONY : src/websocket/dnsServer.c.obj
 
-src/websocket/dnServer.i: src/websocket/dnServer.c.i
-.PHONY : src/websocket/dnServer.i
+src/websocket/dnsServer.i: src/websocket/dnsServer.c.i
+.PHONY : src/websocket/dnsServer.i
 
 # target to preprocess a source file
-src/websocket/dnServer.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.i
-.PHONY : src/websocket/dnServer.c.i
+src/websocket/dnsServer.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.i
+.PHONY : src/websocket/dnsServer.c.i
 
-src/websocket/dnServer.s: src/websocket/dnServer.c.s
-.PHONY : src/websocket/dnServer.s
+src/websocket/dnsServer.s: src/websocket/dnsServer.c.s
+.PHONY : src/websocket/dnsServer.s
 
 # target to generate assembly for a file
-src/websocket/dnServer.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/dnServer.c.s
-.PHONY : src/websocket/dnServer.c.s
+src/websocket/dnsServer.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.s
+.PHONY : src/websocket/dnsServer.c.s
 
 src/websocket/websocket.obj: src/websocket/websocket.c.obj
 .PHONY : src/websocket/websocket.obj
@@ -266,9 +266,9 @@ help:
 	@echo ... src/websocket/datagram.obj
 	@echo ... src/websocket/datagram.i
 	@echo ... src/websocket/datagram.s
-	@echo ... src/websocket/dnServer.obj
-	@echo ... src/websocket/dnServer.i
-	@echo ... src/websocket/dnServer.s
+	@echo ... src/websocket/dnsServer.obj
+	@echo ... src/websocket/dnsServer.i
+	@echo ... src/websocket/dnsServer.s
 	@echo ... src/websocket/websocket.obj
 	@echo ... src/websocket/websocket.i
 	@echo ... src/websocket/websocket.s
