@@ -22,7 +22,7 @@ extern struct sockaddr_in dest;
 int initSystem();
 SOCKET sendDnsRequest(const char* hostname, unsigned short qtype);
 int sendDnsQuery(const char* hostname, unsigned short qtype);
-int parseDnsResponse(SOCKET sock, const char* hostname, int query_len);
+int parseDnsResponse(SOCKET sock);
 void cleanupSystem();
 
 #endif // WEBSOCKET_H

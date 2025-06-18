@@ -62,7 +62,7 @@ SOCKET sendDnsRequest(const char* hostname, unsigned short qtype)
 }
 
 
-int parseDnsResponse(SOCKET sock, const char* hostname, int query_len)
+int parseDnsResponse(SOCKET sock)
 {
     char buf[BUF_SIZE];      // 用于接收数据的缓冲区
     
@@ -172,7 +172,7 @@ int sendDnsQuery(const char* hostname, unsigned short qtype)
 
     // 由于我们现在使用ENTITY结构，不需要重新计算查询长度
     // parseDnsResponse函数现在不依赖query_len参数
-    return parseDnsResponse(sock, hostname, 0);
+    return parseDnsResponse(sock);
 }
 
 void cleanupSystem()
