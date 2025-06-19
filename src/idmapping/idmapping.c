@@ -52,16 +52,15 @@ int add_mapping(dns_mapping_table_t* table, unsigned short original_id,
             table->entries[i].client_addr_len = client_addr_len; // 地址结构长度
             table->entries[i].timestamp = time(NULL);           // 请求创建时间戳
             table->entries[i].is_active = 1;                    // 标记为活跃状态
-            
-            table->count++;  // 增加活跃映射计数
-            log_debug("Added mapping: original_id=%d -> new_id=%d (slot %d, total: %d)", 
+              table->count++;  // 增加活跃映射计数
+            log_debug("添加映射: 原始ID=%d -> 新ID=%d (槽位 %d, 总数: %d)", 
                      original_id, *new_id, i, table->count);
             return MYSUCCESS;
         }
     }
     
     // 映射表已满，无法添加新映射
-    log_error("Mapping table is full (max: %d), cannot add new mapping", MAX_CONCURRENT_REQUESTS);
+    log_error("映射表已满 (最大: %d)，无法添加新映射", MAX_CONCURRENT_REQUESTS);
     return MYERROR;
 }
 
@@ -77,11 +76,10 @@ int add_mapping(dns_mapping_table_t* table, unsigned short original_id,
  * @param new_id 要查找的新ID（来自上游响应）
  * @return dns_mapping_entry_t* 找到的映射条目指针，未找到返回NULL
  */
-dns_mapping_entry_t* find_mapping_by_new_id(dns_mapping_table_t* table, unsigned short new_id) {
-    // 线性搜索映射表
+dns_mapping_entry_t* find_mapping_by_new_id(dns_mapping_table_t* table, unsigned short new_id) {    // 线性搜索映射表
     for (int i = 0; i < MAX_CONCURRENT_REQUESTS; i++) {
         if (table->entries[i].is_active && table->entries[i].new_id == new_id) {
-            log_debug("Found mapping for new_id=%d at slot %d", new_id, i);
+            log_debug("找到新ID=%d 的映射，位于槽位 %d", new_id, i);
             return &table->entries[i];
         }
     }
@@ -90,7 +88,7 @@ dns_mapping_entry_t* find_mapping_by_new_id(dns_mapping_table_t* table, unsigned
     // 1. 响应ID错误
     // 2. 映射已过期被清理
     // 3. 收到了重复响应
-    log_debug("No mapping found for new_id=%d", new_id);
+    log_debug("未找到新ID=%d 对应的映射", new_id);
     return NULL;
 }
 
@@ -108,18 +106,17 @@ dns_mapping_entry_t* find_mapping_by_new_id(dns_mapping_table_t* table, unsigned
 void remove_mapping(dns_mapping_table_t* table, unsigned short new_id) {
     // 查找并移除指定ID的映射
     for (int i = 0; i < MAX_CONCURRENT_REQUESTS; i++) {
-        if (table->entries[i].is_active && table->entries[i].new_id == new_id) {
-            // 标记为非活跃状态（实际上是删除）
+        if (table->entries[i].is_active && table->entries[i].new_id == new_id) {            // 标记为非活跃状态（实际上是删除）
             table->entries[i].is_active = 0;
             table->count--;  // 减少活跃映射计数
-            log_debug("Removed mapping: new_id=%d from slot %d (remaining: %d)", 
+            log_debug("移除映射: 新ID=%d，槽位 %d (剩余: %d)", 
                      new_id, i, table->count);
             return;
         }
     }
     
     // 如果执行到这里，说明没有找到要删除的映射
-    log_warn("Attempted to remove non-existent mapping: new_id=%d", new_id);
+    log_warn("尝试移除不存在的映射: 新ID=%d", new_id);
 }
 
 
@@ -144,9 +141,8 @@ void cleanup_expired_mappings(dns_mapping_table_t* table) {
     for (int i = 0; i < MAX_CONCURRENT_REQUESTS; i++) {
         if (table->entries[i].is_active && 
             (current_time - table->entries[i].timestamp) > REQUEST_TIMEOUT) {
-            
-            // 记录被清理的映射信息（用于调试）
-            log_debug("Cleaning expired mapping: slot=%d, new_id=%d, age=%ld seconds", 
+              // 记录被清理的映射信息（用于调试）
+            log_debug("清理过期映射: 槽位=%d, 新ID=%d, 存活时间=%ld 秒", 
                      i, table->entries[i].new_id, 
                      (long)(current_time - table->entries[i].timestamp));
             
@@ -159,7 +155,7 @@ void cleanup_expired_mappings(dns_mapping_table_t* table) {
     
     // 如果清理了映射，记录清理统计信息
     if (cleaned > 0) {
-        log_info("Cleaned up %d expired mappings (timeout: %d seconds, remaining: %d)", 
+        log_info("清理了 %d 个过期映射 (超时: %d 秒, 剩余: %d)", 
                 cleaned, REQUEST_TIMEOUT, table->count);
     }
 }

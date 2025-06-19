@@ -63,12 +63,7 @@ DNS_ENTITY* create_dns_query(const char* hostname, unsigned short qtype) {
 }
 
 // 函数：将DNS_ENTITY序列化为DNS协议格式的字节流
-int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity) {
-    int offset = 0;
-    
-    log_debug("=== Serialize DNS Packet Debug ===");
-    log_debug("Starting serialization: qdcount=%d, ancount=%d, nscount=%d, arcount=%d", 
-             dns_entity->qdcount, dns_entity->ancount, dns_entity->nscount, dns_entity->arcount);
+int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity) {    int offset = 0;
     
     // 写入DNS头部
     *((unsigned short*)(buffer + offset)) = htons(dns_entity->id);
@@ -195,7 +190,7 @@ int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity) {
             memcpy(buffer + offset, dns_entity->authorities[i].rdata, dns_entity->authorities[i].data_len);
             offset += dns_entity->authorities[i].data_len;
         }
-    }    log_debug("After authorities section: offset=%d", offset);
+    }
 
     // 写入附加记录部分
     for (int i = 0; i < dns_entity->arcount; i++) {
@@ -241,10 +236,7 @@ int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity) {
             memcpy(buffer + offset, dns_entity->additionals[i].rdata, dns_entity->additionals[i].data_len);
             offset += dns_entity->additionals[i].data_len;
         }
-    }
-    
-    log_debug("Final serialized packet size: %d bytes", offset);
-    log_debug("=== End Serialize Debug ===");
+    }    
     
     return offset;
 }
@@ -314,7 +306,7 @@ DNS_ENTITY* parse_dns_packet(const char* buffer, int buffer_len) {
     entity->arcount = ntohs(*((unsigned short*)(buffer + offset)));
     offset += 2;
     
-    log_debug("After DNS header: offset=%d", offset);
+
 
     // 解析问题部分
     if (entity->qdcount > 0) {

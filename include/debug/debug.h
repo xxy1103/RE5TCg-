@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <stdlib.h>
 
 // 定义调试级别
 typedef enum {
@@ -31,20 +32,18 @@ extern LogLevel current_log_level;
 #define LOG(level, format, ...) \
     do { \
         if (level <= MAX_LOG_LEVEL && level <= current_log_level && level != LOG_LEVEL_NONE) { \
-            time_t timer; \
-            char buffer[26]; \
-            struct tm* tm_info; \
-            time(&timer); \
-            tm_info = localtime(&timer); \
-            strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info); \
-            printf("[%s] [%s] [%s:%d] " format "\n", \
-                   buffer, log_level_to_string(level), __FILE__, __LINE__, ##__VA_ARGS__); \
+            write_log_to_file(level, __FILE__, __LINE__, format, ##__VA_ARGS__); \
         } \
     } while (0)
 
 // --- 用于将枚举转换为字符串的辅助函数 ---
 const char* log_level_to_string(LogLevel level);
 void set_log_level(LogLevel level);
+
+// --- 文件日志相关函数 ---
+void init_log_file(void);
+void cleanup_log_file(void);
+void write_log_to_file(LogLevel level, const char* file, int line, const char* format, ...);
 
 
 // --- 每个级别的便捷宏 ---

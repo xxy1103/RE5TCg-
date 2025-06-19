@@ -24,36 +24,35 @@ int initSystem()
 
 int sendDnsPacket(SOCKET sock,struct sockaddr_in address,const DNS_ENTITY* dns_entity)
 {
-    char buf[BUF_SIZE];      // 用于发送数据的缓冲区
+    char buf[BUF_SIZE];      // 用于发送数据的缓冲区    
     // 将DNS_ENTITY序列化为字节流
     int packet_len = serialize_dns_packet(buf, dns_entity);
     if (packet_len <= 0) {
-        log_error("Failed to serialize DNS packet, packet_len=%d", packet_len);
+        log_error("DNS数据包序列化失败，数据包长度=%d", packet_len);
         return MYERROR;
     }  
     
     // 使用 sendto 函数通过 UDP 发送数据
     if (sendto(sock, buf, packet_len, 0, (struct sockaddr *)&address, sizeof(address)) == SOCKET_ERROR) {
         int error = WSAGetLastError();
-        log_error("sendto failed with error: %d", error);
+        log_error("sendto 调用失败，错误码: %d", error);
 
         // === 错误处理和分类 ===
         if (error == WSAEWOULDBLOCK) {
             // 发送缓冲区满，这在高负载时可能发生
-            log_warn("Send buffer full (WSAEWOULDBLOCK), request may be delayed");
+            log_warn("发送缓冲区已满 (WSAEWOULDBLOCK)，请求可能延迟");
             // 注意：在真实的生产环境中，这里可能需要重试逻辑
             return MYSUCCESS;  // 视为成功，因为数据最终会被发送
         } else {
             // 真正的网络错误
-            log_error("Failed to send to %s:%d: error %d", 
+            log_error("向 %s:%d 发送数据失败，错误码: %d", 
                      inet_ntoa(address.sin_addr), ntohs(address.sin_port), error);
             return MYERROR;
         }
     }
     
     // === 记录成功发送 ===
-    log_debug("Successfully sent %d bytes to %s:%d", 
-             packet_len, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+    
     
     return MYSUCCESS;
 }

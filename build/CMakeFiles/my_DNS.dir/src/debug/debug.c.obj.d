@@ -16,4 +16,18 @@ CMakeFiles/my_DNS.dir/src/debug/debug.c.obj: \
  D:/msys64/mingw64/include/sec_api/sys/timeb_s.h \
  D:/msys64/mingw64/include/_timeval.h \
  D:/msys64/mingw64/include/pthread_time.h \
- D:/msys64/mingw64/include/pthread_compat.h
+ D:/msys64/mingw64/include/pthread_compat.h \
+ D:/msys64/mingw64/include/stdlib.h \
+ D:/msys64/mingw64/include/corecrt_wstdlib.h \
+ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/limits.h \
+ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/syslimits.h \
+ D:/msys64/mingw64/include/limits.h \
+ D:/msys64/mingw64/include/sec_api/stdlib_s.h \
+ D:/msys64/mingw64/include/malloc.h \
+ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/mm_malloc.h \
+ D:/msys64/mingw64/include/errno.h \
+ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/stdarg.h \
+ D:/msys64/mingw64/include/stdarg.h \
+ D:/msys64/mingw64/include/_mingw_stdarg.h \
+ D:/msys64/mingw64/include/string.h \
+ D:/msys64/mingw64/include/sec_api/string_s.h

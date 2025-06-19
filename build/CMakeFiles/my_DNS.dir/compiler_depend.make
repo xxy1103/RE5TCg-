@@ -6,20 +6,34 @@ CMakeFiles/my_DNS.dir/src/debug/debug.c.obj: D:/windows/desktop/DNS/my_DNS/src/d
   D:/msys64/mingw64/include/_mingw_mac.h \
   D:/msys64/mingw64/include/_mingw_off_t.h \
   D:/msys64/mingw64/include/_mingw_secapi.h \
+  D:/msys64/mingw64/include/_mingw_stdarg.h \
   D:/msys64/mingw64/include/_timeval.h \
   D:/msys64/mingw64/include/corecrt.h \
   D:/msys64/mingw64/include/corecrt_stdio_config.h \
+  D:/msys64/mingw64/include/corecrt_wstdlib.h \
   D:/msys64/mingw64/include/crtdefs.h \
+  D:/msys64/mingw64/include/errno.h \
+  D:/msys64/mingw64/include/limits.h \
+  D:/msys64/mingw64/include/malloc.h \
   D:/msys64/mingw64/include/pthread_compat.h \
   D:/msys64/mingw64/include/pthread_time.h \
   D:/msys64/mingw64/include/sdks/_mingw_ddk.h \
   D:/msys64/mingw64/include/sec_api/stdio_s.h \
+  D:/msys64/mingw64/include/sec_api/stdlib_s.h \
+  D:/msys64/mingw64/include/sec_api/string_s.h \
   D:/msys64/mingw64/include/sec_api/sys/timeb_s.h \
+  D:/msys64/mingw64/include/stdarg.h \
   D:/msys64/mingw64/include/stdio.h \
+  D:/msys64/mingw64/include/stdlib.h \
+  D:/msys64/mingw64/include/string.h \
   D:/msys64/mingw64/include/swprintf.inl \
   D:/msys64/mingw64/include/sys/timeb.h \
   D:/msys64/mingw64/include/time.h \
   D:/msys64/mingw64/include/vadefs.h \
+  D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/limits.h \
+  D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/mm_malloc.h \
+  D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/stdarg.h \
+  D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/syslimits.h \
   D:/windows/desktop/DNS/my_DNS/include/debug/debug.h
 
 CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj: D:/windows/desktop/DNS/my_DNS/src/idmapping/idmapping.c \
@@ -1594,8 +1608,6 @@ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/tmmintrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/tbmintrin.h:
 
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/syslimits.h:
-
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/stddef.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/sm4intrin.h:
@@ -1626,27 +1638,17 @@ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/mwaitxintrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/mwaitintrin.h:
 
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/mm_malloc.h:
-
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/mm3dnow.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/lwpintrin.h:
 
-D:/msys64/mingw64/include/sec_api/stralign_s.h:
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/keylockerintrin.h:
 
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/pkuintrin.h:
-
-D:/msys64/mingw64/include/rpcnsi.h:
-
-D:/msys64/mingw64/include/rpcndr.h:
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/hresetintrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512bwintrin.h:
 
 D:/msys64/mingw64/include/limits.h:
-
-D:/msys64/mingw64/include/namedpipeapi.h:
-
-D:/msys64/mingw64/include/winbase.h:
 
 D:/windows/desktop/DNS/my_DNS/include/websocket/datagram.h:
 
@@ -1722,8 +1724,6 @@ D:/msys64/mingw64/include/wingdi.h:
 
 D:/msys64/mingw64/include/ole2.h:
 
-D:/msys64/mingw64/include/rpcnsip.h:
-
 D:/windows/desktop/DNS/my_DNS/src/websocket/datagram.c:
 
 D:/msys64/mingw64/include/objidlbase.h:
@@ -1738,19 +1738,11 @@ D:/msys64/mingw64/include/nb30.h:
 
 D:/msys64/mingw64/include/timeapi.h:
 
-D:/msys64/mingw64/include/urlmon.h:
-
-D:/msys64/mingw64/include/rpcsal.h:
-
 D:/msys64/mingw64/include/_mingw_secapi.h:
 
 D:/msys64/mingw64/include/threadpoolapiset.h:
 
 D:/msys64/mingw64/include/msxml.h:
-
-D:/msys64/mingw64/include/sec_api/stdio_s.h:
-
-D:/msys64/mingw64/include/mstcpip.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/wbnoinvdintrin.h:
 
@@ -1768,15 +1760,9 @@ D:/msys64/mingw64/include/mmiscapi2.h:
 
 D:/msys64/mingw64/include/_mingw_stdarg.h:
 
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/bmi2intrin.h:
-
-D:/msys64/mingw64/include/winerror.h:
-
 D:/msys64/mingw64/include/minwindef.h:
 
 D:/msys64/mingw64/include/mcx.h:
-
-D:/msys64/mingw64/include/mciapi.h:
 
 D:/msys64/mingw64/include/concurrencysal.h:
 
@@ -1785,6 +1771,10 @@ D:/msys64/mingw64/include/ktmtypes.h:
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/emmintrin.h:
 
 D:/msys64/mingw64/include/joystickapi.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/immintrin.h:
+
+D:/msys64/mingw64/include/oleauto.h:
 
 D:/msys64/mingw64/include/lzexpand.h:
 
@@ -1796,81 +1786,15 @@ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/pconfigintrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/amxtileintrin.h:
 
-D:/msys64/mingw64/include/bemapiset.h:
+D:/msys64/mingw64/include/objidl.h:
 
-D:/msys64/mingw64/include/corecrt_stdio_config.h:
+D:/msys64/mingw64/include/imm.h:
 
-D:/msys64/mingw64/include/processtopologyapi.h:
+D:/msys64/mingw64/include/fibersapi.h:
 
-D:/msys64/mingw64/include/ws2def.h:
-
-D:/msys64/mingw64/include/consoleapi2.h:
-
-D:/msys64/mingw64/include/memoryapi.h:
-
-D:/msys64/mingw64/include/sal.h:
-
-D:/msys64/mingw64/include/profileapi.h:
-
-D:/msys64/mingw64/include/errno.h:
+D:/msys64/mingw64/include/ws2tcpip.h:
 
 D:/msys64/mingw64/include/stdio.h:
-
-D:/msys64/mingw64/include/rpcnterr.h:
-
-D:/msys64/mingw64/include/combaseapi.h:
-
-D:/msys64/mingw64/include/corecrt_wstdlib.h:
-
-D:/msys64/mingw64/include/securitybaseapi.h:
-
-D:/windows/desktop/DNS/my_DNS/src/debug/debug.c:
-
-D:/msys64/mingw64/include/pthread_compat.h:
-
-D:/msys64/mingw64/include/ctype.h:
-
-D:/msys64/mingw64/include/cguid.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512bf16intrin.h:
-
-D:/msys64/mingw64/include/mmiscapi.h:
-
-D:/msys64/mingw64/include/fltwinerror.h:
-
-D:/msys64/mingw64/include/pthread_time.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx10_2-512minmaxintrin.h:
-
-D:/msys64/mingw64/include/sec_api/stdlib_s.h:
-
-D:/msys64/mingw64/include/sys/timeb.h:
-
-D:/msys64/mingw64/include/_timeval.h:
-
-D:/msys64/mingw64/include/excpt.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512vldqintrin.h:
-
-D:/msys64/mingw64/include/interlockedapi.h:
-
-D:/msys64/mingw64/include/propidl.h:
-
-D:/msys64/mingw64/include/wincrypt.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/cetintrin.h:
-
-D:/msys64/mingw64/include/bcrypt.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/limits.h:
-
-D:/msys64/mingw64/include/winioctl.h:
-
-D:/msys64/mingw64/include/synchapi.h:
-
-D:/msys64/mingw64/include/sdks/_mingw_ddk.h:
-
-D:/msys64/mingw64/include/psdk_inc/_wsadata.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx10_2-512bf16intrin.h:
 
@@ -1882,23 +1806,159 @@ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/wmmintrin.h:
 
 D:/msys64/mingw64/include/time.h:
 
-D:/msys64/mingw64/include/dde.h:
+D:/msys64/mingw64/include/pthread_time.h:
 
-D:/msys64/mingw64/include/ioapiset.h:
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx10_2-512minmaxintrin.h:
 
-D:/msys64/mingw64/include/pshpack1.h:
+D:/msys64/mingw64/include/memoryapi.h:
 
-D:/msys64/mingw64/include/psdk_inc/_wsa_errnos.h:
+D:/msys64/mingw64/include/consoleapi2.h:
 
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/enqcmdintrin.h:
+D:/msys64/mingw64/include/pthread_compat.h:
 
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/keylockerintrin.h:
+D:/windows/desktop/DNS/my_DNS/src/debug/debug.c:
+
+D:/msys64/mingw64/include/psdk_inc/_wsadata.h:
+
+D:/msys64/mingw64/include/sdks/_mingw_ddk.h:
+
+D:/msys64/mingw64/include/synchapi.h:
+
+D:/msys64/mingw64/include/errno.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512vldqintrin.h:
+
+D:/msys64/mingw64/include/sys/timeb.h:
+
+D:/msys64/mingw64/include/processtopologyapi.h:
+
+D:/msys64/mingw64/include/ws2def.h:
+
+D:/msys64/mingw64/include/errhandlingapi.h:
+
+D:/msys64/mingw64/include/_mingw.h:
+
+D:/msys64/mingw64/include/heapapi.h:
+
+D:/msys64/mingw64/include/mstcpip.h:
+
+D:/msys64/mingw64/include/sec_api/stdio_s.h:
+
+D:/msys64/mingw64/include/urlmon.h:
+
+D:/msys64/mingw64/include/rpcsal.h:
+
+D:/msys64/mingw64/include/winerror.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/bmi2intrin.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/mm_malloc.h:
+
+D:/msys64/mingw64/include/bcrypt.h:
+
+D:/msys64/mingw64/include/excpt.h:
+
+D:/msys64/mingw64/include/_timeval.h:
+
+D:/msys64/mingw64/include/ctype.h:
+
+D:/msys64/mingw64/include/cguid.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512bf16intrin.h:
+
+D:/msys64/mingw64/include/mmiscapi.h:
+
+D:/msys64/mingw64/include/fltwinerror.h:
+
+D:/msys64/mingw64/include/sec_api/stdlib_s.h:
+
+D:/msys64/mingw64/include/stdarg.h:
+
+D:/msys64/mingw64/include/vadefs.h:
+
+D:/msys64/mingw64/include/combaseapi.h:
+
+D:/msys64/mingw64/include/corecrt_wstdlib.h:
+
+D:/msys64/mingw64/include/securitybaseapi.h:
+
+D:/msys64/mingw64/include/stdlib.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/amxfp16intrin.h:
+
+D:/msys64/mingw64/include/interlockedapi.h:
+
+D:/msys64/mingw64/include/propidl.h:
+
+D:/msys64/mingw64/include/wincrypt.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/cetintrin.h:
+
+D:/msys64/mingw64/include/bemapiset.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/movdirintrin.h:
+
+D:/msys64/mingw64/include/guiddef.h:
+
+D:/msys64/mingw64/include/string.h:
+
+D:/msys64/mingw64/include/apiset.h:
+
+D:/msys64/mingw64/include/corecrt_stdio_config.h:
+
+D:/msys64/mingw64/include/namedpipeapi.h:
+
+D:/msys64/mingw64/include/winbase.h:
+
+D:/msys64/mingw64/include/winioctl.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/limits.h:
+
+D:/msys64/mingw64/include/mciapi.h:
+
+D:/msys64/mingw64/include/wincontypes.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/syslimits.h:
+
+D:/msys64/mingw64/include/minwinbase.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/ammintrin.h:
 
 D:/windows/desktop/DNS/my_DNS/include/debug/debug.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/amxcomplexintrin.h:
 
-D:/msys64/mingw64/include/heapapi.h:
+D:/msys64/mingw64/include/psdk_inc/_wsa_errnos.h:
+
+D:/msys64/mingw64/include/pshpack1.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/enqcmdintrin.h:
+
+D:/msys64/mingw64/include/fileapi.h:
+
+D:/msys64/mingw64/include/winefs.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/xsavesintrin.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512bf16vlintrin.h:
+
+D:/windows/desktop/DNS/my_DNS/src/idmapping/idmapping.c:
+
+D:/msys64/mingw64/include/dde.h:
+
+D:/msys64/mingw64/include/ioapiset.h:
+
+D:/msys64/mingw64/include/psdk_inc/_fd_types.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/xsaveoptintrin.h:
+
+D:/msys64/mingw64/include/consoleapi.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/bmiintrin.h:
+
+D:/msys64/mingw64/include/crtdefs.h:
+
+D:/msys64/mingw64/include/malloc.h:
 
 D:/msys64/mingw64/include/oaidl.h:
 
@@ -1915,14 +1975,6 @@ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512vbmi2intrin.h:
 D:/msys64/mingw64/include/qos.h:
 
 D:/msys64/mingw64/include/_bsd_types.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/xsaveoptintrin.h:
-
-D:/msys64/mingw64/include/consoleapi.h:
-
-D:/msys64/mingw64/include/psdk_inc/_fd_types.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/bmiintrin.h:
 
 D:/msys64/mingw64/include/consoleapi3.h:
 
@@ -1944,43 +1996,7 @@ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512cdintrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avxifmaintrin.h:
 
-D:/msys64/mingw64/include/objidl.h:
-
-D:/msys64/mingw64/include/imm.h:
-
-D:/msys64/mingw64/include/dlgs.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avxvnniintrin.h:
-
-D:/msys64/mingw64/include/_mingw.h:
-
-D:/msys64/mingw64/include/errhandlingapi.h:
-
-D:/msys64/mingw64/include/fibersapi.h:
-
-D:/msys64/mingw64/include/ws2tcpip.h:
-
-D:/msys64/mingw64/include/apiset.h:
-
-D:/msys64/mingw64/include/string.h:
-
-D:/windows/desktop/DNS/my_DNS/src/idmapping/idmapping.c:
-
-D:/msys64/mingw64/include/fileapi.h:
-
-D:/msys64/mingw64/include/winefs.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/xsavesintrin.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512bf16vlintrin.h:
-
-D:/msys64/mingw64/include/malloc.h:
-
-D:/msys64/mingw64/include/crtdefs.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/movdirintrin.h:
-
-D:/msys64/mingw64/include/guiddef.h:
+D:/msys64/mingw64/include/in6addr.h:
 
 D:/msys64/mingw64/include/ddeml.h:
 
@@ -1990,7 +2006,25 @@ D:/msys64/mingw64/include/wincon.h:
 
 D:/msys64/mingw64/include/stralign.h:
 
-D:/msys64/mingw64/include/in6addr.h:
+D:/msys64/mingw64/include/dlgs.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avxvnniintrin.h:
+
+D:/msys64/mingw64/include/rpcndr.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/pkuintrin.h:
+
+D:/msys64/mingw64/include/rpcnsi.h:
+
+D:/msys64/mingw64/include/rpcnsip.h:
+
+D:/msys64/mingw64/include/rpcnterr.h:
+
+D:/msys64/mingw64/include/profileapi.h:
+
+D:/msys64/mingw64/include/sal.h:
+
+D:/msys64/mingw64/include/sec_api/stralign_s.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512bitalgintrin.h:
 
@@ -2004,21 +2038,17 @@ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/mmintrin.h:
 
 D:/msys64/mingw64/include/specstrings.h:
 
-D:/msys64/mingw64/include/vadefs.h:
-
-D:/msys64/mingw64/include/stdarg.h:
-
 D:/msys64/mingw64/include/stddef.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/amxfp16intrin.h:
-
-D:/msys64/mingw64/include/stdlib.h:
 
 D:/msys64/mingw64/include/securityappcontainer.h:
 
 D:/msys64/mingw64/include/stringapiset.h:
 
 D:/msys64/mingw64/include/threadpoollegacyapiset.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/ia32intrin.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/gfniintrin.h:
 
 D:/msys64/mingw64/include/poppack.h:
 
@@ -2031,8 +2061,6 @@ D:/msys64/mingw64/include/unknwn.h:
 D:/msys64/mingw64/include/unknwnbase.h:
 
 D:/msys64/mingw64/include/winapifamily.h:
-
-D:/msys64/mingw64/include/wincontypes.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/amxmovrsintrin.h:
 
@@ -2050,9 +2078,9 @@ D:/msys64/mingw64/include/winscard.h:
 
 D:/msys64/mingw64/include/winsmcrd.h:
 
-D:/msys64/mingw64/include/realtimeapiset.h:
-
 D:/msys64/mingw64/include/corecrt.h:
+
+D:/msys64/mingw64/include/realtimeapiset.h:
 
 D:/msys64/mingw64/include/winsock.h:
 
@@ -2079,10 +2107,6 @@ D:/msys64/mingw64/include/wtypes.h:
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/xsavecintrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/adxintrin.h:
-
-D:/msys64/mingw64/include/minwinbase.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/ammintrin.h:
 
 D:/msys64/mingw64/include/rpcasync.h:
 
@@ -2116,9 +2140,9 @@ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx10_2convertintrin
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx10_2copyintrin.h:
 
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/stdarg.h:
-
 D:/msys64/mingw64/include/mmsystem.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/stdarg.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx10_2mediaintrin.h:
 
@@ -2177,13 +2201,3 @@ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/fmaintrin.h:
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/f16cintrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/fma4intrin.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/hresetintrin.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/gfniintrin.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/ia32intrin.h:
-
-D:/msys64/mingw64/include/oleauto.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/immintrin.h:

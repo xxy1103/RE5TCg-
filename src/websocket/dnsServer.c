@@ -43,32 +43,32 @@ int start_dns_proxy_server() {
 
     // === 第一步：初始化映射表 ===
     init_mapping_table(&g_mapping_table);
-    log_info("Initialized DNS mapping table (max concurrent: %d)", MAX_CONCURRENT_REQUESTS);
+    log_debug("初始化映射表 (id最大值为: %d)", MAX_CONCURRENT_REQUESTS);
 
     // === 第二步：创建服务器socket ===
     server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (server_socket == INVALID_SOCKET) {
-        log_error("Failed to create server socket: %d", WSAGetLastError());
+        log_error("创建SOCKET失败，错误代码: %d", WSAGetLastError());
         return MYERROR;
     }
-    log_debug("Created server socket successfully");
+    log_debug("SOCKET 创建成功");
 
     // === 第三步：设置服务器socket为非阻塞模式 ===
     // 非阻塞模式使得recvfrom()在没有数据时立即返回WSAEWOULDBLOCK
     // 而不是阻塞等待，这是实现并发处理的关键
     u_long mode = 1;
     if (ioctlsocket(server_socket, FIONBIO, &mode) == SOCKET_ERROR) {
-        log_error("Failed to set server socket non-blocking mode: %d", WSAGetLastError());
+        log_error("设置socket非阻塞失败: %d", WSAGetLastError());
         closesocket(server_socket);
         return MYERROR;
     }
-    log_debug("Set server socket to non-blocking mode");
+    log_debug("设置socket非阻塞成功");
 
     // === 第四步：设置socket选项 ===
     // SO_REUSEADDR允许快速重启服务器，避免"Address already in use"错误
     int optval = 1;
     if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&optval, sizeof(optval)) == SOCKET_ERROR) {
-        log_warn("setsockopt(SO_REUSEADDR) failed with error: %d", WSAGetLastError());
+        log_warn("setsockopt(SO_REUSEADDR) 失败，错误码: %d", WSAGetLastError());
         // 即使设置失败，也继续尝试绑定，因为这不一定是致命错误
     }
 
@@ -80,13 +80,13 @@ int start_dns_proxy_server() {
 
     // 将套接字绑定到指定的IP地址和端口
     if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
-        log_error("Failed to bind socket to port %d: %d", DNS_PORT, WSAGetLastError());
+        log_error("监听端口号 %d 失败，错误码: %d", DNS_PORT, WSAGetLastError());
         closesocket(server_socket);
         return MYERROR;
     }
 
-    log_info("DNS Proxy Server listening on port %d...", DNS_PORT);
-    log_info("Ready to handle concurrent DNS requests (using select() event loop)");
+    log_info("DNS服务成功运行，正在监听端口： %d...", DNS_PORT);
+    log_info("准备处理并发DNS请求（使用select()事件循环）");
 
     // === 第六步：主事件循环 ===    // === 第八步：主事件循环 ===
     /*
@@ -108,8 +108,7 @@ int start_dns_proxy_server() {
         // === 准备监听的socket集合 ===
         FD_ZERO(&read_fds);                    // 清空文件描述符集合
         FD_SET(server_socket, &read_fds);      // 添加服务器socket（监听客户端请求）
-        
-        // === 设置select超时时间 ===
+          // === 设置select超时时间 ===
         // 1秒超时确保：
         // 1. 不会无限期阻塞
         // 2. 可以定期执行维护任务
@@ -117,20 +116,16 @@ int start_dns_proxy_server() {
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
         
-        // === 计算最大文件描述符值 ===
-        // select()需要知道监听范围的上限
-        SOCKET max_fd = server_socket;
-        
         // === 调用select()等待事件 ===
         // 这是阻塞调用，直到：
         // 1. 有socket变为可读
         // 2. 达到超时时间
         // 3. 发生错误
-        int activity = select(max_fd + 1, &read_fds, NULL, NULL, &timeout);
-        
-        // === 处理select()返回值 ===
+        // 注意：只监听一个socket时，直接使用 server_socket + 1 作为第一个参数
+        int activity = select(server_socket + 1, &read_fds, NULL, NULL, &timeout);
+          // === 处理select()返回值 ===
         if (activity == SOCKET_ERROR) {
-            log_error("select() failed: %d", WSAGetLastError());
+            log_error("select() 调用失败，错误码: %d", WSAGetLastError());
             break; // 发生严重错误，退出主循环
         }
         
@@ -153,16 +148,13 @@ int start_dns_proxy_server() {
         if (current_time - last_cleanup > 10) {  // 清理间隔：10秒
             cleanup_expired_mappings(&g_mapping_table);
             last_cleanup = current_time;
-            
-            // 记录服务器状态（每10秒一次）
-            log_debug("Server status: active mappings=%d, uptime=%ld seconds", 
+              // 记录服务器状态（每10秒一次）
+            log_debug("服务器状态: 活跃映射数=%d, 运行时间=%ld 秒", 
                      g_mapping_table.count, current_time - last_cleanup + 10);
         }
-    }
-
-    // === 清理资源 ===
+    }    // === 清理资源 ===
     // 正常情况下这里不会执行（无限循环），但为了代码完整性保留
-    log_info("DNS Proxy Server shutting down...");
+    log_info("DNS代理服务器正在关闭...");
     closesocket(server_socket);
     return MYSUCCESS;
 }
@@ -206,21 +198,21 @@ int handle_receive()
                                  (struct sockaddr*)&source_addr, &source_addr_len)) > 0)
     {
         receive_processed++;
-        char* source_ip = inet_ntoa(source_addr.sin_addr);
-        // === 验证请求数据完整性 ===
+        char* source_ip = inet_ntoa(source_addr.sin_addr);        // === 验证请求数据完整性 ===
         if (receive_len < 2) {
-            log_warn("Request too short (%d bytes), ignoring", receive_len);
+            log_warn("请求数据过短 (%d 字节)，忽略处理", receive_len);
             source_addr_len = sizeof(source_addr);  // 重置地址长度
             continue;
         }        DNS_ENTITY* dns_entity = parse_dns_packet(receive_buffer, receive_len);
         if (!dns_entity) {
-            log_warn("Failed to parse DNS packet from %s (%d bytes), ignoring", source_ip, receive_len);
+            log_warn("无法解析来自 %s 的DNS数据包 (%d 字节)，忽略处理", source_ip, receive_len);
             source_addr_len = sizeof(source_addr);  // 重置地址长度
             continue;
         }
 
         if(strcmp(DNS_SERVER,source_ip))
         {
+            
             handle_client_requests(dns_entity, source_addr, source_addr_len, receive_len);
         }
         else
@@ -233,13 +225,13 @@ int handle_receive()
         //log_debug("%s",dns_entity_to_string(dns_entity));
 
         free_dns_entity(dns_entity);
-    }    
-
+    }        
     int error = WSAGetLastError();
+
     if (error != WSAEWOULDBLOCK) {
-        log_error("Error receiving from client: %d", error);
+        log_error("从客户端接收数据时发生错误: %d", error);
     } else if (receive_processed > 0) {
-        log_debug("Processed %d client requests in this batch", receive_processed);
+        log_debug("本批次已处理 %d 个客户端请求", receive_processed);
     }
 
 }
@@ -265,20 +257,20 @@ int handle_receive()
  * @param server_socket 服务器socket，用于接收客户端请求
  */
 void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in client_addr, int client_addr_len,int request_len) {
-    
-    log_debug("Received DNS request 1 from %s:%d (%d bytes)",
+    log_debug("收到来自 %s:%d 的DNS请求 (%d 字节)",
             inet_ntoa(client_addr.sin_addr), 
             ntohs(client_addr.sin_port), request_len);
-    log_debug("original_id:%d",dns_entity->id);
+
+
+    log_debug("%s",dns_entity_to_string(dns_entity));
+    log_debug("原始ID: %d",dns_entity->id);
         
 
-        
     // === 提取并验证原始Transaction ID ===
     // DNS头部的前2个字节是Transaction ID（网络字节序）
     unsigned short original_id = dns_entity->id;
     unsigned short new_id;
         
-    log_debug("Processing request with original_id=%d", original_id);
         
     // === 创建ID映射关系 ===
     /*
@@ -286,27 +278,25 @@ void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in client_add
     * 1. 多个客户端可能使用相同的Transaction ID
     * 2. 我们需要确保每个上游请求都有唯一的ID
     * 3. 响应返回时要恢复原始ID给对应客户端
-    */
-    if (add_mapping(&g_mapping_table, original_id, &client_addr, client_addr_len, &new_id) != MYSUCCESS) {
-        log_error("Failed to add mapping for request from %s:%d (original_id=%d)",
+    */    
+   if (add_mapping(&g_mapping_table, original_id, &client_addr, client_addr_len, &new_id) != MYSUCCESS) {
+        log_error("为来自 %s:%d 的请求添加映射失败 (原始ID=%d)",
                     inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), original_id);
         client_addr_len = sizeof(client_addr);  // 重置地址长度
         return;
     }
-        
     // === 修改请求的Transaction ID ===
     // 将客户端的原始ID替换为我们分配的新ID
     dns_entity->id = new_id;
-    log_debug("Modified request ID: %d -> %d", original_id, new_id);
+    log_debug("修改请求ID: %d -> %d", original_id, new_id);
         
-        
-    // === 转发请求到上游DNS服务器 ===
+          // === 转发请求到上游DNS服务器 ===
     if (sendDnsPacket(server_socket,upstream_addr,dns_entity) != MYSUCCESS) {
-        log_error("Failed to forward request to upstream (new_id=%d)", new_id);
+        log_error("转发请求到上游服务器失败 (新ID=%d)", new_id);
         // 转发失败，清理刚创建的映射
         remove_mapping(&g_mapping_table, new_id);
     } else {
-        log_debug("Successfully forwarded request with new_id=%d", new_id);
+        log_debug("成功转发请求，上游ID=%d", new_id);
     }
         
     // === 重置地址长度供下次使用 ===
@@ -329,20 +319,17 @@ void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in client_add
  * @param server_socket 服务器socket，用于向客户端发送响应
  */
 void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_addr,int source_len,int response_len) 
-{
-
-    // === 批量处理所有等待的上游响应 ===
+{    // === 批量处理所有等待的上游响应 ===
     /*
      * 与处理客户端请求类似，批量处理所有等待的响应。
      * 这样可以减少select()调用次数，提高处理效率。
      */
-    log_debug("Received DNS response 1 from upstream (%d bytes)", response_len);
-        
-    
+    log_debug("收到来自上游的DNS响应 (%d 字节)", response_len);
+    log_debug("%s",dns_entity_to_string(dns_entity));
     // === 提取响应Transaction ID ===
     // 这是我们之前分配给上游请求的新ID
     unsigned short response_id = dns_entity->id;
-    log_debug("Processing response with ID=%d", response_id);
+    log_debug("正在处理上游ID为 %d 的响应", response_id);
     
     // === 查找对应的映射关系 ===
     /*
@@ -352,10 +339,9 @@ void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_
      * 2. 映射已过期被清理
      * 3. 收到重复响应
      * 4. 恶意或错误的响应
-     */
-    dns_mapping_entry_t* mapping = find_mapping_by_new_id(&g_mapping_table, response_id);
+     */    dns_mapping_entry_t* mapping = find_mapping_by_new_id(&g_mapping_table, response_id);
     if (!mapping) {
-        log_warn("No mapping found for response ID %d, discarding response", response_id);
+        log_warn("未找到响应ID %d 对应的映射，丢弃响应", response_id);
         source_len = sizeof(source_addr);  // 重置地址长度
         return ;
     }
@@ -364,29 +350,22 @@ void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_
     /*
      * 将响应中的ID改回客户端原始的Transaction ID，
      * 这样客户端就能正确识别和处理响应。
-     */
-    unsigned short original_id = mapping->original_id;
+     */    unsigned short original_id = mapping->original_id;
     dns_entity->id = original_id;
     
-    log_debug("Restored response ID: %d -> %d for client %s:%d", 
+    log_debug("恢复响应ID: %d -> %d，目标客户端 %s:%d", 
              response_id, original_id,
              inet_ntoa(mapping->client_addr.sin_addr), 
              ntohs(mapping->client_addr.sin_port));
     
-    // === 将响应发送给原始客户端 ===
-    /*
-     * 使用映射中保存的客户端地址信息，
-     * 将响应准确发送回原始请求的客户端。
-     */
-    
 
 if (sendDnsPacket(server_socket, mapping->client_addr, dns_entity) == MYERROR) {
         int send_error = WSAGetLastError();
-        log_error("Failed to send response to client %s:%d: %d",
+        log_error("向客户端 %s:%d 发送响应失败: %d",
                  inet_ntoa(mapping->client_addr.sin_addr), 
                  ntohs(mapping->client_addr.sin_port), send_error);
     } else {
-        log_info("Response sent to client %s:%d (%d bytes, original_id=%d)",
+        log_info("已向客户端 %s:%d 发送响应 (%d 字节，原始ID=%d)",
                 inet_ntoa(mapping->client_addr.sin_addr), 
                 ntohs(mapping->client_addr.sin_port), response_len, original_id);
     }

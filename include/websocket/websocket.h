@@ -9,7 +9,7 @@
 //定义宏
 #define MYSUCCESS 1
 #define MYERROR 0
-#define DNS_SERVER "180.76.76.76"  // 定义 Google 的公共 DNS 服务器地址
+#define DNS_SERVER "10.3.9.6"  // 定义 Google 的公共 DNS 服务器地址
 #define DNS_PORT 53           // 定义 DNS 服务使用的标准端口号
 #define BUF_SIZE 65536        // 定义缓冲区大小，用于存储发送和接收的数据
 
