@@ -39,8 +39,13 @@ typedef struct DNS_ENTITY{
     unsigned short arcount;  // 附加回答数：附加区域中的资源记录数量
     DNS_QUESTION_ENTITY* questions; // 问题部分的数组
     R_DATA_ENTITY* answers; // 回答部分的数组
+    R_DATA_ENTITY* authorities; // 权威记录部分的数组
+    R_DATA_ENTITY* additionals; // 附加记录部分的数组
 } DNS_ENTITY;
 
+
+// 函数：计算DNS格式域名的实际长度
+int get_dns_name_length(const char* dns_name);
 
 // 函数：将域名格式化为DNS查询格式 (例如 "www.baidu.com" -> "3www5baidu3com0")
 // DNS协议要求域名以一种特殊的格式表示，每个标签前有一个字节表示该标签的长度。
@@ -57,6 +62,9 @@ DNS_ENTITY* create_dns_query(const char* hostname, unsigned short qtype);
 
 // 函数：释放DNS_ENTITY及其相关资源
 void free_dns_entity(DNS_ENTITY* entity);
+
+// 函数：将DNS_ENTITY转换为格式化的字符串表示
+char* dns_entity_to_string(const DNS_ENTITY* entity);
 
 // 函数：从缓冲区中读取域名（处理DNS压缩）
 int read_name_from_buffer(const char* buffer, int buffer_len, int* offset, char* name, int max_name_len);

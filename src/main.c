@@ -15,9 +15,8 @@
  * 
  * @return int 成功返回 0，失败返回 1。
  */
-int main() {
-    // 设置日志记录级别为 INFO
-    set_log_level(LOG_LEVEL_INFO);
+int main() {    // 设置日志记录级别为 DEBUG 以查看更多信息
+    set_log_level(LOG_LEVEL_DEBUG);
     
     log_info("Starting DNS Proxy Server...");
 

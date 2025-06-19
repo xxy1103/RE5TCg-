@@ -64,7 +64,7 @@ int start_dns_proxy_server() {
     }
     log_debug("Set server socket to non-blocking mode");
 
-    // === 第六步：设置socket选项 ===
+    // === 第四步：设置socket选项 ===
     // SO_REUSEADDR允许快速重启服务器，避免"Address already in use"错误
     int optval = 1;
     if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&optval, sizeof(optval)) == SOCKET_ERROR) {
@@ -72,7 +72,7 @@ int start_dns_proxy_server() {
         // 即使设置失败，也继续尝试绑定，因为这不一定是致命错误
     }
 
-    // === 第七步：配置并绑定服务器地址 ===
+    // === 第五步：配置并绑定服务器地址 ===
     memset(&server_addr, 0, sizeof(server_addr)); // 清零结构体
     server_addr.sin_family = AF_INET;              // IPv4协议族
     server_addr.sin_addr.s_addr = INADDR_ANY;      // 监听所有网络接口
@@ -88,7 +88,7 @@ int start_dns_proxy_server() {
     log_info("DNS Proxy Server listening on port %d...", DNS_PORT);
     log_info("Ready to handle concurrent DNS requests (using select() event loop)");
 
-    // === 第八步：主事件循环 ===    // === 第八步：主事件循环 ===
+    // === 第六步：主事件循环 ===    // === 第八步：主事件循环 ===
     /*
      * 这是一个经典的事件驱动循环，使用select()系统调用来：
      * 1. 同时监听多个socket的可读事件
@@ -207,14 +207,32 @@ int handle_receive()
     {
         receive_processed++;
         char* source_ip = inet_ntoa(source_addr.sin_addr);
+        // === 验证请求数据完整性 ===
+        if (receive_len < 2) {
+            log_warn("Request too short (%d bytes), ignoring", receive_len);
+            source_addr_len = sizeof(source_addr);  // 重置地址长度
+            continue;
+        }        DNS_ENTITY* dns_entity = parse_dns_packet(receive_buffer, receive_len);
+        if (!dns_entity) {
+            log_warn("Failed to parse DNS packet from %s (%d bytes), ignoring", source_ip, receive_len);
+            source_addr_len = sizeof(source_addr);  // 重置地址长度
+            continue;
+        }
+
         if(strcmp(DNS_SERVER,source_ip))
         {
-            handle_client_requests(receive_buffer, source_addr, source_addr_len, receive_len);
+            handle_client_requests(dns_entity, source_addr, source_addr_len, receive_len);
         }
         else
         {
-            handle_upstream_responses(receive_buffer, source_addr, source_addr_len, receive_len);
+            handle_upstream_responses(dns_entity, source_addr, source_addr_len,receive_len);
         }
+        
+        // 处理完成后释放DNS实体内存
+
+        //log_debug("%s",dns_entity_to_string(dns_entity));
+
+        free_dns_entity(dns_entity);
     }    
 
     int error = WSAGetLastError();
@@ -224,90 +242,6 @@ int handle_receive()
         log_debug("Processed %d client requests in this batch", receive_processed);
     }
 
-
-    // DNS_ENTITY* request_entity = parse_dns_packet(request_buffer, request_len);
-    // if (!request_entity) {
-    //     log_error("Failed to parse DNS request");
-    //     return MYERROR;
-    // }
-
-    // // 2. 打印接收请求的基本信息
-    // log_info("=== Received DNS Request ===");
-    // log_info("Transaction ID: %d", request_entity->id);
-    // log_info("Flags: 0x%04X", request_entity->flags);
-    // log_info("Questions: %d", request_entity->qdcount);
-    // // 遍历并打印所有问题
-    // if (request_entity->questions && request_entity->qdcount > 0) {
-    //     for (int i = 0; i < request_entity->qdcount; i++) {
-    //         DNS_QUESTION_ENTITY* question = &request_entity->questions[i];
-    //         log_info("Question %d: Name=%s, Type=%d, Class=%d", 
-    //                 i + 1, question->qname, question->qtype, question->qclass);
-    //     }    }
-    // // 3. 将原始请求数据包转发给上游DNS服务器
-    
-    // if (forward_to_upstream_dns(request_buffer, request_len, 
-    //                            response_buffer, &response_len) != MYSUCCESS) {
-    //     log_error("Failed to forward request to upstream DNS server");
-    //     free_dns_entity(request_entity); // 释放请求实体内存
-    //     return MYERROR;
-    // }
-
-    // // 4. 将从上游服务器收到的响应数据解析为 DNS_ENTITY 结构体
-    // DNS_ENTITY* response_entity = parse_dns_packet(response_buffer, response_len);
-    // if (!response_entity) {
-    //     log_error("Failed to parse DNS response from upstream server");
-    //     free_dns_entity(request_entity); // 释放请求实体内存
-    //     return MYERROR;
-    // }
-
-    //  // 5. 打印从上游DNS服务器收到的响应的关键信息
-    // log_info("=== Received DNS Response from Upstream ===");
-    // log_info("Transaction ID: %u", response_entity->id);
-    // log_info("Flags: 0x%04X", response_entity->flags);
-    // log_info("Questions: %d, Answers: %d", response_entity->qdcount, response_entity->ancount);
-
-    //  // 遍历并打印所有答案记录
-    // if (response_entity->ancount > 0) {
-    //     log_info("--- Answers ---");
-    //     for (int i = 0; i < response_entity->ancount; i++) {
-    //         R_DATA_ENTITY* answer = &response_entity->answers[i];
-            
-    //         // 根据记录类型格式化输出
-    //         if (answer->type == A && answer->data_len == 4) { // A记录 (IPv4)
-    //             unsigned char* ip_addr = (unsigned char*)answer->rdata;
-    //             log_info("Answer %d: %s -> %d.%d.%d.%d (TTL: %lu)", 
-    //                     i + 1, answer->name, ip_addr[0], ip_addr[1], ip_addr[2], ip_addr[3], 
-    //                     (unsigned long)answer->ttl);
-    //         } else if (answer->type == AAAA && answer->data_len == 16) { // AAAA记录 (IPv6)
-    //             log_info("Answer %d: %s -> IPv6 (TTL: %lu)", i + 1, answer->name, (unsigned long)answer->ttl);
-    //         } else if (answer->type == CNAME) { // CNAME记录
-    //             log_info("Answer %d: %s -> CNAME: %s (TTL: %lu)", 
-    //                     i + 1, answer->name, answer->rdata, (unsigned long)answer->ttl);
-    //         } else { // 其他类型的记录
-    //             log_info("Answer %d: %s -> Type %d (TTL: %lu)", 
-    //                     i + 1, answer->name, answer->type, (unsigned long)answer->ttl);
-    //         }
-    //     }    }
-
-    // // 6. 将上游服务器的响应数据包发送回原始客户端   
-    // if (sendto(server_socket, response_buffer, response_len, 0, 
-    //           (struct sockaddr*)client_addr, client_addr_len) == SOCKET_ERROR) {
-    //     log_error("Failed to send DNS response to client: %d", WSAGetLastError());
-    //     free_dns_entity(request_entity);
-    //     free_dns_entity(response_entity);
-    //     return MYERROR;
-    // }
-
-    // // 记录总执行时间
-    // double total_time = (double)(clock() - start_time) / CLOCKS_PER_SEC;
-    // log_info("DNS response sent to client %s:%d (%d bytes) - Total processing time: %.3f seconds", 
-    //         inet_ntoa(client_addr->sin_addr), ntohs(client_addr->sin_port), response_len, total_time);
-
-    // // 清理本次请求/响应所分配的内存
-    // free_dns_entity(request_entity);
-    // free_dns_entity(response_entity);
-    
-    // return MYSUCCESS;
 }
 
 /*
@@ -330,57 +264,53 @@ int handle_receive()
  * 
  * @param server_socket 服务器socket，用于接收客户端请求
  */
-void handle_client_requests(char request_buffer[BUF_SIZE],struct sockaddr_in client_addr,
-                            int client_addr_len,int request_len) {
+void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in client_addr, int client_addr_len,int request_len) {
     
-        log_info("Received DNS request 1 from %s:%d (%d bytes)",
-                inet_ntoa(client_addr.sin_addr), 
-                ntohs(client_addr.sin_port), request_len);
+    log_debug("Received DNS request 1 from %s:%d (%d bytes)",
+            inet_ntoa(client_addr.sin_addr), 
+            ntohs(client_addr.sin_port), request_len);
+    log_debug("original_id:%d",dns_entity->id);
         
-        // === 验证请求数据完整性 ===
-        if (request_len < 2) {
-            log_warn("Request too short (%d bytes), ignoring", request_len);
-            client_addr_len = sizeof(client_addr);  // 重置地址长度
-            return;
-        }
+
         
-        // === 提取并验证原始Transaction ID ===
-        // DNS头部的前2个字节是Transaction ID（网络字节序）
-        unsigned short original_id = ntohs(*(unsigned short*)request_buffer);
-        unsigned short new_id;
+    // === 提取并验证原始Transaction ID ===
+    // DNS头部的前2个字节是Transaction ID（网络字节序）
+    unsigned short original_id = dns_entity->id;
+    unsigned short new_id;
         
-        log_debug("Processing request with original_id=%d", original_id);
+    log_debug("Processing request with original_id=%d", original_id);
         
-        // === 创建ID映射关系 ===
-        /*
-         * 为什么需要ID映射？
-         * 1. 多个客户端可能使用相同的Transaction ID
-         * 2. 我们需要确保每个上游请求都有唯一的ID
-         * 3. 响应返回时要恢复原始ID给对应客户端
-         */
-        if (add_mapping(&g_mapping_table, original_id, &client_addr, client_addr_len, &new_id) != MYSUCCESS) {
-            log_error("Failed to add mapping for request from %s:%d (original_id=%d)",
-                     inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), original_id);
-            client_addr_len = sizeof(client_addr);  // 重置地址长度
-            return;
-        }
+    // === 创建ID映射关系 ===
+    /*
+    * 为什么需要ID映射？
+    * 1. 多个客户端可能使用相同的Transaction ID
+    * 2. 我们需要确保每个上游请求都有唯一的ID
+    * 3. 响应返回时要恢复原始ID给对应客户端
+    */
+    if (add_mapping(&g_mapping_table, original_id, &client_addr, client_addr_len, &new_id) != MYSUCCESS) {
+        log_error("Failed to add mapping for request from %s:%d (original_id=%d)",
+                    inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), original_id);
+        client_addr_len = sizeof(client_addr);  // 重置地址长度
+        return;
+    }
         
-        // === 修改请求的Transaction ID ===
-        // 将客户端的原始ID替换为我们分配的新ID
-        *(unsigned short*)request_buffer = htons(new_id);
-        log_debug("Modified request ID: %d -> %d", original_id, new_id);
+    // === 修改请求的Transaction ID ===
+    // 将客户端的原始ID替换为我们分配的新ID
+    dns_entity->id = new_id;
+    log_debug("Modified request ID: %d -> %d", original_id, new_id);
         
-        // === 转发请求到上游DNS服务器 ===
-        if (forward_request_to_upstream(request_buffer, request_len) != MYSUCCESS) {
-            log_error("Failed to forward request to upstream (new_id=%d)", new_id);
-            // 转发失败，清理刚创建的映射
-            remove_mapping(&g_mapping_table, new_id);
-        } else {
-            log_debug("Successfully forwarded request with new_id=%d", new_id);
-        }
         
-        // === 重置地址长度供下次使用 ===
-        client_addr_len = sizeof(client_addr);
+    // === 转发请求到上游DNS服务器 ===
+    if (sendDnsPacket(server_socket,upstream_addr,dns_entity) != MYSUCCESS) {
+        log_error("Failed to forward request to upstream (new_id=%d)", new_id);
+        // 转发失败，清理刚创建的映射
+        remove_mapping(&g_mapping_table, new_id);
+    } else {
+        log_debug("Successfully forwarded request with new_id=%d", new_id);
+    }
+        
+    // === 重置地址长度供下次使用 ===
+    client_addr_len = sizeof(client_addr);
 }
 
 /**
@@ -398,7 +328,7 @@ void handle_client_requests(char request_buffer[BUF_SIZE],struct sockaddr_in cli
  * 
  * @param server_socket 服务器socket，用于向客户端发送响应
  */
-void handle_upstream_responses(char response_buffer[BUF_SIZE],struct sockaddr_in source_addr,int source_len,int response_len) 
+void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_addr,int source_len,int response_len) 
 {
 
     // === 批量处理所有等待的上游响应 ===
@@ -408,16 +338,10 @@ void handle_upstream_responses(char response_buffer[BUF_SIZE],struct sockaddr_in
      */
     log_debug("Received DNS response 1 from upstream (%d bytes)", response_len);
         
-    // === 验证响应数据完整性 ===
-    if (response_len < 2) {
-        log_warn("Response too short (%d bytes), ignoring", response_len);
-        source_len = sizeof(source_addr);  // 重置地址长度
-        return;
-    }
     
     // === 提取响应Transaction ID ===
     // 这是我们之前分配给上游请求的新ID
-    unsigned short response_id = ntohs(*(unsigned short*)response_buffer);
+    unsigned short response_id = dns_entity->id;
     log_debug("Processing response with ID=%d", response_id);
     
     // === 查找对应的映射关系 ===
@@ -442,7 +366,7 @@ void handle_upstream_responses(char response_buffer[BUF_SIZE],struct sockaddr_in
      * 这样客户端就能正确识别和处理响应。
      */
     unsigned short original_id = mapping->original_id;
-    *(unsigned short*)response_buffer = htons(original_id);
+    dns_entity->id = original_id;
     
     log_debug("Restored response ID: %d -> %d for client %s:%d", 
              response_id, original_id,
@@ -454,8 +378,9 @@ void handle_upstream_responses(char response_buffer[BUF_SIZE],struct sockaddr_in
      * 使用映射中保存的客户端地址信息，
      * 将响应准确发送回原始请求的客户端。
      */
-    if (sendto(server_socket, response_buffer, response_len, 0,
-              (struct sockaddr*)&mapping->client_addr, mapping->client_addr_len) == SOCKET_ERROR) {
+    
+
+if (sendDnsPacket(server_socket, mapping->client_addr, dns_entity) == MYERROR) {
         int send_error = WSAGetLastError();
         log_error("Failed to send response to client %s:%d: %d",
                  inet_ntoa(mapping->client_addr.sin_addr), 
@@ -478,54 +403,3 @@ void handle_upstream_responses(char response_buffer[BUF_SIZE],struct sockaddr_in
 
 }
 
-/**
- * @brief 转发请求到上游DNS服务器
- * 
- * 这个函数将经过ID修改的DNS请求发送到上游DNS服务器。
- * 使用全局的g_upstream_socket避免重复创建连接，提高性能。
- * 
- * 关键特点：
- * 1. 使用预先创建的全局socket
- * 2. 非阻塞发送（快速返回）
- * 3. 统一的错误处理
- * 4. 详细的日志记录
- * 
- * @param request_buffer 要转发的DNS请求数据
- * @param request_len 请求数据长度
- * @return int 成功返回MYSUCCESS，失败返回MYERROR
- */
-int forward_request_to_upstream(char* request_buffer, int request_len) {
-    
-    // === 发送请求到上游服务器 ===
-    /*
-     * 
-     * 由于socket是非阻塞的，sendto()会立即返回：
-     * - 成功：数据已放入发送缓冲区
-     * - WSAEWOULDBLOCK：发送缓冲区满，稍后重试
-     * - 其他错误：网络问题或配置错误
-     */
-    if (sendto(server_socket, request_buffer, request_len, 0,
-              (struct sockaddr*)&upstream_addr, sizeof(upstream_addr)) == SOCKET_ERROR) {
-        
-        int error = WSAGetLastError();
-        
-        // === 错误处理和分类 ===
-        if (error == WSAEWOULDBLOCK) {
-            // 发送缓冲区满，这在高负载时可能发生
-            log_warn("Upstream send buffer full (WSAEWOULDBLOCK), request may be delayed");
-            // 注意：在真实的生产环境中，这里可能需要重试逻辑
-            return MYSUCCESS;  // 视为成功，因为数据最终会被发送
-        } else {
-            // 真正的网络错误
-            log_error("Failed to send to upstream DNS (%s:%d): error %d", 
-                     DNS_SERVER, DNS_PORT, error);
-            return MYERROR;
-        }
-    }
-    
-    // === 记录成功发送 ===
-    log_debug("Successfully sent %d bytes to upstream DNS server %s:%d", 
-             request_len, DNS_SERVER, DNS_PORT);
-    
-    return MYSUCCESS;
-}

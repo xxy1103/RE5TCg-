@@ -22,8 +22,7 @@ int handle_dns_request(char* request_buffer, int request_len, struct sockaddr_in
 
 // 新增并发处理相关函数
 int handle_receive();
-void handle_client_requests(char request_buffer[BUF_SIZE],struct sockaddr_in client_addr,
-                            int client_addr_len,int request_len);
-void handle_upstream_responses(char response_buffer[BUF_SIZE],struct sockaddr_in source_addr,int source_len,int response_len);
+void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in source_addr, int source_addr_len,int receive_len);
+void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_addr, int source_addr_len, int receive_len);
 int forward_request_to_upstream(char* request_buffer, int request_len) ;
 #endif // DNSSERVER_H
