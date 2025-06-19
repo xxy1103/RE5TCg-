@@ -1,3 +1,0 @@
-/home/ulna/my_DNS/build/CMakeFiles/my_DNS.dir
-/home/ulna/my_DNS/build/CMakeFiles/edit_cache.dir
-/home/ulna/my_DNS/build/CMakeFiles/rebuild_cache.dir

@@ -1,9 +1,8 @@
 #include "websocket/dnsServer.h"
 #include "platform/platform.h"
 #include <time.h>  // 添加时间相关的头文件支持
-#include <errno.h> // 包含 errno.h 以使用 EWOULDBLOCK 和 EAGAIN
 #include <string.h> // 包含 memset 和 strcmp
-#include <arpa/inet.h> // 包含 inet_ntoa
+
 
 /*
  * ============================================================================
@@ -68,12 +67,10 @@ int start_dns_proxy_server() {
     // === 第四步：设置socket选项 ===
     if (set_socket_reuseaddr(server_socket) == SOCKET_ERROR) {
         log_warn("setsockopt(SO_REUSEADDR) 失败，错误码: %d", platform_get_last_error());
-    }
-
-    // === 第五步：配置并绑定服务器地址 ===
+    }    // === 第五步：配置并绑定服务器地址 ===
     memset(&server_addr, 0, sizeof(server_addr)); // 清零结构体
     server_addr.sin_family = AF_INET;              // IPv4协议族
-    server_addr.sin_addr.s_addr = INADDR_ANY;      // 监听所有网络接口
+    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1"); // 监听本地回环接口
     server_addr.sin_port = htons(DNS_PORT);        // DNS标准端口53
 
     // 将套接字绑定到指定的IP地址和端口
@@ -182,7 +179,8 @@ int start_dns_proxy_server() {
  * @return int 成功返回 MYSUCCESS，失败返回 MYERROR
  */
 int handle_receive()
-{    char receive_buffer[BUF_SIZE]; // 存储接收数据的缓冲区
+{    
+    char receive_buffer[BUF_SIZE]; // 存储接收数据的缓冲区
     struct sockaddr_in source_addr; // 接收数据的源地址
     socklen_t source_addr_len = sizeof(source_addr);    int receive_len = 0; // 接收到的数据长度
     int receive_processed = 0;     // 本次处理的数据计数

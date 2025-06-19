@@ -14,6 +14,7 @@
     #include <unistd.h>
     #include <fcntl.h>
     #include <errno.h>
+    #include <arpa/inet.h> // 包含 inet_ntoa
     #define SOCKET int
     #define INVALID_SOCKET -1
     #define SOCKET_ERROR -1
