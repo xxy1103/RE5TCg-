@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj"
   "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj.d"
+  "CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj"
+  "CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj.d"
   "CMakeFiles/my_DNS.dir/src/main.c.obj"
   "CMakeFiles/my_DNS.dir/src/main.c.obj.d"
   "CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj"

@@ -9,6 +9,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "D:/windows/desktop/DNS/my_DNS/src/debug/debug.c" "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj.d"
+  "D:/windows/desktop/DNS/my_DNS/src/idmapping/idmapping.c" "CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj.d"
   "D:/windows/desktop/DNS/my_DNS/src/main.c" "CMakeFiles/my_DNS.dir/src/main.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/main.c.obj.d"
   "D:/windows/desktop/DNS/my_DNS/src/websocket/datagram.c" "CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj.d"
   "D:/windows/desktop/DNS/my_DNS/src/websocket/dnsServer.c" "CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj.d"

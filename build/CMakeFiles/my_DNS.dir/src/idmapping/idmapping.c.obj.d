@@ -1,6 +1,6 @@
-CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj: \
- D:\windows\desktop\DNS\my_DNS\src\websocket\dnsServer.c \
- D:/windows/desktop/DNS/my_DNS/include/websocket/dnsServer.h \
+CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj: \
+ D:\windows\desktop\DNS\my_DNS\src\idmapping\idmapping.c \
+ D:/windows/desktop/DNS/my_DNS/include/idmapping/idmapping.h \
  D:/windows/desktop/DNS/my_DNS/include/websocket/websocket.h \
  D:/msys64/mingw64/include/winsock2.h \
  D:/msys64/mingw64/include/_mingw_unicode.h \
@@ -268,5 +268,4 @@ CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj: \
  D:/msys64/mingw64/include/ws2tcpip.h \
  D:/msys64/mingw64/include/ws2ipdef.h D:/msys64/mingw64/include/in6addr.h \
  D:/msys64/mingw64/include/psdk_inc/_ip_mreq1.h \
- D:/msys64/mingw64/include/mstcpip.h \
- D:/windows/desktop/DNS/my_DNS/include/idmapping/idmapping.h
+ D:/msys64/mingw64/include/mstcpip.h

@@ -4,6 +4,8 @@
         "stdio.h": "c",
         "websocket.h": "c",
         "datagram.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "debug.h": "c",
+        "*.bak": "c"
     }
 }

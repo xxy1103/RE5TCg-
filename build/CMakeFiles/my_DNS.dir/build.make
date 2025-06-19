@@ -86,11 +86,26 @@ CMakeFiles/my_DNS.dir/src/debug/debug.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/my_DNS.dir/src/debug/debug.c.s"
 	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S D:\windows\desktop\DNS\my_DNS\src\debug\debug.c -o CMakeFiles\my_DNS.dir\src\debug\debug.c.s
 
+CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj: CMakeFiles/my_DNS.dir/flags.make
+CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj: CMakeFiles/my_DNS.dir/includes_C.rsp
+CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj: D:/windows/desktop/DNS/my_DNS/src/idmapping/idmapping.c
+CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj: CMakeFiles/my_DNS.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj"
+	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj -MF CMakeFiles\my_DNS.dir\src\idmapping\idmapping.c.obj.d -o CMakeFiles\my_DNS.dir\src\idmapping\idmapping.c.obj -c D:\windows\desktop\DNS\my_DNS\src\idmapping\idmapping.c
+
+CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.i"
+	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E D:\windows\desktop\DNS\my_DNS\src\idmapping\idmapping.c > CMakeFiles\my_DNS.dir\src\idmapping\idmapping.c.i
+
+CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.s"
+	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S D:\windows\desktop\DNS\my_DNS\src\idmapping\idmapping.c -o CMakeFiles\my_DNS.dir\src\idmapping\idmapping.c.s
+
 CMakeFiles/my_DNS.dir/src/main.c.obj: CMakeFiles/my_DNS.dir/flags.make
 CMakeFiles/my_DNS.dir/src/main.c.obj: CMakeFiles/my_DNS.dir/includes_C.rsp
 CMakeFiles/my_DNS.dir/src/main.c.obj: D:/windows/desktop/DNS/my_DNS/src/main.c
 CMakeFiles/my_DNS.dir/src/main.c.obj: CMakeFiles/my_DNS.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/my_DNS.dir/src/main.c.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/my_DNS.dir/src/main.c.obj"
 	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/my_DNS.dir/src/main.c.obj -MF CMakeFiles\my_DNS.dir\src\main.c.obj.d -o CMakeFiles\my_DNS.dir\src\main.c.obj -c D:\windows\desktop\DNS\my_DNS\src\main.c
 
 CMakeFiles/my_DNS.dir/src/main.c.i: cmake_force
@@ -105,7 +120,7 @@ CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj: CMakeFiles/my_DNS.dir/flags.
 CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj: CMakeFiles/my_DNS.dir/includes_C.rsp
 CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj: D:/windows/desktop/DNS/my_DNS/src/websocket/datagram.c
 CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj: CMakeFiles/my_DNS.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj"
 	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj -MF CMakeFiles\my_DNS.dir\src\websocket\datagram.c.obj.d -o CMakeFiles\my_DNS.dir\src\websocket\datagram.c.obj -c D:\windows\desktop\DNS\my_DNS\src\websocket\datagram.c
 
 CMakeFiles/my_DNS.dir/src/websocket/datagram.c.i: cmake_force
@@ -120,7 +135,7 @@ CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj: CMakeFiles/my_DNS.dir/flags
 CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj: CMakeFiles/my_DNS.dir/includes_C.rsp
 CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj: D:/windows/desktop/DNS/my_DNS/src/websocket/dnsServer.c
 CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj: CMakeFiles/my_DNS.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj"
 	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj -MF CMakeFiles\my_DNS.dir\src\websocket\dnsServer.c.obj.d -o CMakeFiles\my_DNS.dir\src\websocket\dnsServer.c.obj -c D:\windows\desktop\DNS\my_DNS\src\websocket\dnsServer.c
 
 CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.i: cmake_force
@@ -135,7 +150,7 @@ CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj: CMakeFiles/my_DNS.dir/flags
 CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj: CMakeFiles/my_DNS.dir/includes_C.rsp
 CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj: D:/windows/desktop/DNS/my_DNS/src/websocket/websocket.c
 CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj: CMakeFiles/my_DNS.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj"
 	D:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj -MF CMakeFiles\my_DNS.dir\src\websocket\websocket.c.obj.d -o CMakeFiles\my_DNS.dir\src\websocket\websocket.c.obj -c D:\windows\desktop\DNS\my_DNS\src\websocket\websocket.c
 
 CMakeFiles/my_DNS.dir/src/websocket/websocket.c.i: cmake_force
@@ -149,6 +164,7 @@ CMakeFiles/my_DNS.dir/src/websocket/websocket.c.s: cmake_force
 # Object files for target my_DNS
 my_DNS_OBJECTS = \
 "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj" \
+"CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj" \
 "CMakeFiles/my_DNS.dir/src/main.c.obj" \
 "CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj" \
 "CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj" \
@@ -158,6 +174,7 @@ my_DNS_OBJECTS = \
 my_DNS_EXTERNAL_OBJECTS =
 
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/src/debug/debug.c.obj
+bin/my_DNS.exe: CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/src/main.c.obj
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj
@@ -166,7 +183,7 @@ bin/my_DNS.exe: CMakeFiles/my_DNS.dir/build.make
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/linkLibs.rsp
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/objects1.rsp
 bin/my_DNS.exe: CMakeFiles/my_DNS.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking C executable bin\my_DNS.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=D:\windows\desktop\DNS\my_DNS\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking C executable bin\my_DNS.exe"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\my_DNS.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

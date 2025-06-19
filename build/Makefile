@@ -152,6 +152,30 @@ src/debug/debug.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/debug/debug.c.s
 .PHONY : src/debug/debug.c.s
 
+src/idmapping/idmapping.obj: src/idmapping/idmapping.c.obj
+.PHONY : src/idmapping/idmapping.obj
+
+# target to build an object file
+src/idmapping/idmapping.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj
+.PHONY : src/idmapping/idmapping.c.obj
+
+src/idmapping/idmapping.i: src/idmapping/idmapping.c.i
+.PHONY : src/idmapping/idmapping.i
+
+# target to preprocess a source file
+src/idmapping/idmapping.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.i
+.PHONY : src/idmapping/idmapping.c.i
+
+src/idmapping/idmapping.s: src/idmapping/idmapping.c.s
+.PHONY : src/idmapping/idmapping.s
+
+# target to generate assembly for a file
+src/idmapping/idmapping.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.s
+.PHONY : src/idmapping/idmapping.c.s
+
 src/main.obj: src/main.c.obj
 .PHONY : src/main.obj
 
@@ -260,6 +284,9 @@ help:
 	@echo ... src/debug/debug.obj
 	@echo ... src/debug/debug.i
 	@echo ... src/debug/debug.s
+	@echo ... src/idmapping/idmapping.obj
+	@echo ... src/idmapping/idmapping.i
+	@echo ... src/idmapping/idmapping.s
 	@echo ... src/main.obj
 	@echo ... src/main.i
 	@echo ... src/main.s
