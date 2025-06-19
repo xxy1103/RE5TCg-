@@ -11,7 +11,7 @@
 // DNS代理服务器函数
 int start_dns_proxy_server();
 int forward_to_upstream_dns(char* request_buffer, int request_len, char* response_buffer, int* response_len);
-int handle_dns_request(char* request_buffer, int request_len, struct sockaddr_in* client_addr, int client_addr_len, SOCKET server_socket);
+int handle_dns_request(char* request_buffer, int request_len, struct sockaddr_in* client_addr, int client_addr_len, socket_t server_socket);
 
 
 

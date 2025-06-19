@@ -13,7 +13,7 @@ static dns_mapping_table_t g_mapping_table;
 
 // 上游DNS套接字（全局，避免重复创建和销毁）
 // 使用单个全局socket可以减少系统调用开销，提高性能
-static SOCKET server_socket = INVALID_SOCKET;
+static socket_t server_socket = INVALID_SOCKET_VALUE;
 
 /*
  * ============================================================================
@@ -43,32 +43,28 @@ int start_dns_proxy_server() {
 
     // === 第一步：初始化映射表 ===
     init_mapping_table(&g_mapping_table);
-    log_debug("初始化映射表 (id最大值为: %d)", MAX_CONCURRENT_REQUESTS);
-
-    // === 第二步：创建服务器socket ===
-    server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (server_socket == INVALID_SOCKET) {
-        log_error("创建SOCKET失败，错误代码: %d", WSAGetLastError());
+    log_debug("初始化映射表 (id最大值为: %d)", MAX_CONCURRENT_REQUESTS);    // === 第二步：创建服务器socket ===
+    server_socket = platform_create_udp_socket();
+    if (server_socket == INVALID_SOCKET_VALUE) {
+        log_error("创建UDP套接字失败");
         return MYERROR;
     }
-    log_debug("SOCKET 创建成功");
+    log_debug("UDP套接字创建成功");
 
     // === 第三步：设置服务器socket为非阻塞模式 ===
-    // 非阻塞模式使得recvfrom()在没有数据时立即返回WSAEWOULDBLOCK
+    // 非阻塞模式使得recvfrom()在没有数据时立即返回
     // 而不是阻塞等待，这是实现并发处理的关键
-    u_long mode = 1;
-    if (ioctlsocket(server_socket, FIONBIO, &mode) == SOCKET_ERROR) {
-        log_error("设置socket非阻塞失败: %d", WSAGetLastError());
-        closesocket(server_socket);
+    if (platform_set_nonblocking(server_socket) != PLATFORM_SUCCESS) {
+        log_error("设置socket非阻塞失败");
+        platform_close_socket(server_socket);
         return MYERROR;
     }
     log_debug("设置socket非阻塞成功");
 
     // === 第四步：设置socket选项 ===
     // SO_REUSEADDR允许快速重启服务器，避免"Address already in use"错误
-    int optval = 1;
-    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&optval, sizeof(optval)) == SOCKET_ERROR) {
-        log_warn("setsockopt(SO_REUSEADDR) 失败，错误码: %d", WSAGetLastError());
+    if (platform_set_reuseaddr(server_socket) != PLATFORM_SUCCESS) {
+        log_warn("设置SO_REUSEADDR失败，继续运行");
         // 即使设置失败，也继续尝试绑定，因为这不一定是致命错误
     }
 
@@ -76,12 +72,11 @@ int start_dns_proxy_server() {
     memset(&server_addr, 0, sizeof(server_addr)); // 清零结构体
     server_addr.sin_family = AF_INET;              // IPv4协议族
     server_addr.sin_addr.s_addr = INADDR_ANY;      // 监听所有网络接口
-    server_addr.sin_port = htons(DNS_PORT);        // DNS标准端口53
-
-    // 将套接字绑定到指定的IP地址和端口
-    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
-        log_error("监听端口号 %d 失败，错误码: %d", DNS_PORT, WSAGetLastError());
-        closesocket(server_socket);
+    server_addr.sin_port = htons(DNS_PORT);        // DNS标准端口53    // 将套接字绑定到指定的IP地址和端口
+    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR_VALUE) {
+        int error = platform_get_last_error();
+        log_error("监听端口号 %d 失败，错误: %s", DNS_PORT, platform_get_error_string(error));
+        platform_close_socket(server_socket);
         return MYERROR;
     }
 
@@ -115,17 +110,15 @@ int start_dns_proxy_server() {
         // 3. 响应外部中断信号
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
-        
-        // === 调用select()等待事件 ===
+          // === 调用select()等待事件 ===
         // 这是阻塞调用，直到：
         // 1. 有socket变为可读
         // 2. 达到超时时间
         // 3. 发生错误
-        // 注意：只监听一个socket时，直接使用 server_socket + 1 作为第一个参数
-        int activity = select(server_socket + 1, &read_fds, NULL, NULL, &timeout);
+        int activity = platform_select(server_socket + 1, &read_fds, NULL, NULL, &timeout);
           // === 处理select()返回值 ===
-        if (activity == SOCKET_ERROR) {
-            log_error("select() 调用失败，错误码: %d", WSAGetLastError());
+        if (activity == SOCKET_ERROR_VALUE) {
+            log_error("select() 调用失败");
             break; // 发生严重错误，退出主循环
         }
         
@@ -153,9 +146,8 @@ int start_dns_proxy_server() {
                      g_mapping_table.count, current_time - last_cleanup + 10);
         }
     }    // === 清理资源 ===
-    // 正常情况下这里不会执行（无限循环），但为了代码完整性保留
-    log_info("DNS代理服务器正在关闭...");
-    closesocket(server_socket);
+    // 正常情况下这里不会执行（无限循环），但为了代码完整性保留    log_info("DNS代理服务器正在关闭...");
+    platform_close_socket(server_socket);
     return MYSUCCESS;
 }
 
@@ -224,12 +216,11 @@ int handle_receive()
 
         //log_debug("%s",dns_entity_to_string(dns_entity));
 
-        free_dns_entity(dns_entity);
-    }        
-    int error = WSAGetLastError();
+        free_dns_entity(dns_entity);    }        
+    int error = platform_get_last_error();
 
-    if (error != WSAEWOULDBLOCK) {
-        log_error("从客户端接收数据时发生错误: %d", error);
+    if (!platform_is_would_block_error(error)) {
+        log_error("从客户端接收数据时发生错误: %s", platform_get_error_string(error));
     } else if (receive_processed > 0) {
         log_debug("本批次已处理 %d 个客户端请求", receive_processed);
     }
@@ -360,10 +351,10 @@ void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_
     
 
 if (sendDnsPacket(server_socket, mapping->client_addr, dns_entity) == MYERROR) {
-        int send_error = WSAGetLastError();
-        log_error("向客户端 %s:%d 发送响应失败: %d",
+        int send_error = platform_get_last_error();
+        log_error("向客户端 %s:%d 发送响应失败: %s",
                  inet_ntoa(mapping->client_addr.sin_addr), 
-                 ntohs(mapping->client_addr.sin_port), send_error);
+                 ntohs(mapping->client_addr.sin_port), platform_get_error_string(send_error));
     } else {
         log_info("已向客户端 %s:%d 发送响应 (%d 字节，原始ID=%d)",
                 inet_ntoa(mapping->client_addr.sin_addr), 

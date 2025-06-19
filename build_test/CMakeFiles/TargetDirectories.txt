@@ -1,0 +1,7 @@
+D:/windows/desktop/DNS/my_DNS/build_test/CMakeFiles/my_DNS.dir
+D:/windows/desktop/DNS/my_DNS/build_test/CMakeFiles/edit_cache.dir
+D:/windows/desktop/DNS/my_DNS/build_test/CMakeFiles/rebuild_cache.dir
+D:/windows/desktop/DNS/my_DNS/build_test/CMakeFiles/list_install_components.dir
+D:/windows/desktop/DNS/my_DNS/build_test/CMakeFiles/install.dir
+D:/windows/desktop/DNS/my_DNS/build_test/CMakeFiles/install/local.dir
+D:/windows/desktop/DNS/my_DNS/build_test/CMakeFiles/install/strip.dir

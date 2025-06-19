@@ -1,0 +1,10 @@
+# ninja log v6
+10	151	7720259417794772	CMakeFiles/my_DNS.dir/src/DNScache/relayBuild.c.obj	f405395f873a1880
+27	280	7720259417867361	CMakeFiles/my_DNS.dir/src/debug/debug.c.obj	758c08f9d098417f
+38	1396	7720259417982558	CMakeFiles/my_DNS.dir/src/main.c.obj	347a4aafb50b3318
+33	1430	7720259417922559	CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj	2982105bd8e738c7
+73	1470	7720259418338697	CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj	b5fa1e7e9eda74cc
+46	1488	7720259418062584	CMakeFiles/my_DNS.dir/src/platform/socket_wrapper.c.obj	664792ce3301cdc4
+63	1519	7720259418242564	CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj	71ff96a83eacb6f2
+52	1739	7720259418122566	CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj	e68cddd4da2785c9
+1739	1952	7720259434993568	bin/my_DNS.exe	59f75eaa86766ddb

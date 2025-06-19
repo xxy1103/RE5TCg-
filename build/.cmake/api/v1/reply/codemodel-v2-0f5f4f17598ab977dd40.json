@@ -6,7 +6,8 @@
 			[
 				{
 					"build" : ".",
-					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-dc1ea32d9b8f1526bdd4.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.10"
@@ -39,7 +40,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "my_DNS::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-my_DNS-Debug-a5a31517a1838d4558af.json",
+					"jsonFile" : "target-my_DNS-Debug-a540cf5d9e6ffe9a46d8.json",
 					"name" : "my_DNS",
 					"projectIndex" : 0
 				}

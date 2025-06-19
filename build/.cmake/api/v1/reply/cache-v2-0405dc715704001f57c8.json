@@ -167,10 +167,10 @@
 				},
 				{
 					"name" : "HELPSTRING",
-					"value" : "C compiler"
+					"value" : "No help, variable specified on the command line."
 				}
 			],
-			"type" : "STRING",
+			"type" : "FILEPATH",
 			"value" : "D:/msys64/mingw64/bin/gcc.exe"
 		},
 		{
@@ -735,7 +735,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "DNS Server Project with TCP Socket Programming"
+			"value" : "Cross-platform DNS Server Project with UDP Socket Programming"
 		},
 		{
 			"name" : "CMAKE_PROJECT_HOMEPAGE_URL",

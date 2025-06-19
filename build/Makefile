@@ -84,6 +84,51 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 .PHONY : rebuild_cache/fast
 
+# Special rule for the target list_install_components
+list_install_components:
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Available install components are: \"Unspecified\""
+.PHONY : list_install_components
+
+# Special rule for the target list_install_components
+list_install_components/fast: list_install_components
+.PHONY : list_install_components/fast
+
+# Special rule for the target install
+install: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Install the project..."
+	D:\msys64\mingw64\bin\cmake.exe -P cmake_install.cmake
+.PHONY : install
+
+# Special rule for the target install
+install/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Install the project..."
+	D:\msys64\mingw64\bin\cmake.exe -P cmake_install.cmake
+.PHONY : install/fast
+
+# Special rule for the target install/local
+install/local: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Installing only the local directory..."
+	D:\msys64\mingw64\bin\cmake.exe -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local
+
+# Special rule for the target install/local
+install/local/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Installing only the local directory..."
+	D:\msys64\mingw64\bin\cmake.exe -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local/fast
+
+# Special rule for the target install/strip
+install/strip: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Installing the project stripped..."
+	D:\msys64\mingw64\bin\cmake.exe -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+.PHONY : install/strip
+
+# Special rule for the target install/strip
+install/strip/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Installing the project stripped..."
+	D:\msys64\mingw64\bin\cmake.exe -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+.PHONY : install/strip/fast
+
 # The main all target
 all: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start D:\windows\desktop\DNS\my_DNS\build\CMakeFiles D:\windows\desktop\DNS\my_DNS\build\\CMakeFiles\progress.marks
@@ -224,6 +269,30 @@ src/main.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/main.c.s
 .PHONY : src/main.c.s
 
+src/platform/socket_wrapper.obj: src/platform/socket_wrapper.c.obj
+.PHONY : src/platform/socket_wrapper.obj
+
+# target to build an object file
+src/platform/socket_wrapper.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/platform/socket_wrapper.c.obj
+.PHONY : src/platform/socket_wrapper.c.obj
+
+src/platform/socket_wrapper.i: src/platform/socket_wrapper.c.i
+.PHONY : src/platform/socket_wrapper.i
+
+# target to preprocess a source file
+src/platform/socket_wrapper.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/platform/socket_wrapper.c.i
+.PHONY : src/platform/socket_wrapper.c.i
+
+src/platform/socket_wrapper.s: src/platform/socket_wrapper.c.s
+.PHONY : src/platform/socket_wrapper.s
+
+# target to generate assembly for a file
+src/platform/socket_wrapper.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/platform/socket_wrapper.c.s
+.PHONY : src/platform/socket_wrapper.c.s
+
 src/websocket/datagram.obj: src/websocket/datagram.c.obj
 .PHONY : src/websocket/datagram.obj
 
@@ -303,6 +372,10 @@ help:
 	@echo ... clean
 	@echo ... depend
 	@echo ... edit_cache
+	@echo ... install
+	@echo ... install/local
+	@echo ... install/strip
+	@echo ... list_install_components
 	@echo ... rebuild_cache
 	@echo ... my_DNS
 	@echo ... src/DNScache/relayBuild.obj
@@ -317,6 +390,9 @@ help:
 	@echo ... src/main.obj
 	@echo ... src/main.i
 	@echo ... src/main.s
+	@echo ... src/platform/socket_wrapper.obj
+	@echo ... src/platform/socket_wrapper.i
+	@echo ... src/platform/socket_wrapper.s
 	@echo ... src/websocket/datagram.obj
 	@echo ... src/websocket/datagram.i
 	@echo ... src/websocket/datagram.s

@@ -1,43 +1,49 @@
 [
 {
   "directory": "D:/windows/desktop/DNS/my_DNS/build",
-  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\DNScache\\relayBuild.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\DNScache\\relayBuild.c",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe -D_WIN32_WINNT=0x0601 @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -g -o CMakeFiles\\my_DNS.dir\\src\\DNScache\\relayBuild.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\DNScache\\relayBuild.c",
   "file": "D:/windows/desktop/DNS/my_DNS/src/DNScache/relayBuild.c",
   "output": "CMakeFiles/my_DNS.dir/src/DNScache/relayBuild.c.obj"
 },
 {
   "directory": "D:/windows/desktop/DNS/my_DNS/build",
-  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\debug\\debug.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\debug\\debug.c",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe -D_WIN32_WINNT=0x0601 @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -g -o CMakeFiles\\my_DNS.dir\\src\\debug\\debug.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\debug\\debug.c",
   "file": "D:/windows/desktop/DNS/my_DNS/src/debug/debug.c",
   "output": "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj"
 },
 {
   "directory": "D:/windows/desktop/DNS/my_DNS/build",
-  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\idmapping\\idmapping.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\idmapping\\idmapping.c",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe -D_WIN32_WINNT=0x0601 @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -g -o CMakeFiles\\my_DNS.dir\\src\\idmapping\\idmapping.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\idmapping\\idmapping.c",
   "file": "D:/windows/desktop/DNS/my_DNS/src/idmapping/idmapping.c",
   "output": "CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj"
 },
 {
   "directory": "D:/windows/desktop/DNS/my_DNS/build",
-  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\main.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\main.c",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe -D_WIN32_WINNT=0x0601 @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -g -o CMakeFiles\\my_DNS.dir\\src\\main.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\main.c",
   "file": "D:/windows/desktop/DNS/my_DNS/src/main.c",
   "output": "CMakeFiles/my_DNS.dir/src/main.c.obj"
 },
 {
   "directory": "D:/windows/desktop/DNS/my_DNS/build",
-  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\websocket\\datagram.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\websocket\\datagram.c",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe -D_WIN32_WINNT=0x0601 @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -g -o CMakeFiles\\my_DNS.dir\\src\\platform\\socket_wrapper.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\platform\\socket_wrapper.c",
+  "file": "D:/windows/desktop/DNS/my_DNS/src/platform/socket_wrapper.c",
+  "output": "CMakeFiles/my_DNS.dir/src/platform/socket_wrapper.c.obj"
+},
+{
+  "directory": "D:/windows/desktop/DNS/my_DNS/build",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe -D_WIN32_WINNT=0x0601 @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -g -o CMakeFiles\\my_DNS.dir\\src\\websocket\\datagram.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\websocket\\datagram.c",
   "file": "D:/windows/desktop/DNS/my_DNS/src/websocket/datagram.c",
   "output": "CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj"
 },
 {
   "directory": "D:/windows/desktop/DNS/my_DNS/build",
-  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\websocket\\dnsServer.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\websocket\\dnsServer.c",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe -D_WIN32_WINNT=0x0601 @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -g -o CMakeFiles\\my_DNS.dir\\src\\websocket\\dnsServer.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\websocket\\dnsServer.c",
   "file": "D:/windows/desktop/DNS/my_DNS/src/websocket/dnsServer.c",
   "output": "CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj"
 },
 {
   "directory": "D:/windows/desktop/DNS/my_DNS/build",
-  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\websocket\\websocket.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\websocket\\websocket.c",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe -D_WIN32_WINNT=0x0601 @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -g -o CMakeFiles\\my_DNS.dir\\src\\websocket\\websocket.c.obj -c D:\\windows\\desktop\\DNS\\my_DNS\\src\\websocket\\websocket.c",
   "file": "D:/windows/desktop/DNS/my_DNS/src/websocket/websocket.c",
   "output": "CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj"
 }
