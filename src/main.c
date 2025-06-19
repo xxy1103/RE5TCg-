@@ -1,3 +1,4 @@
+#include "platform/platform.h"
 // 包含自定义的 WebSocket 头文件，定义了相关函数和结构体
 #include "websocket/websocket.h" 
 // 包含自定义的数据报头文件，定义了 DNS 报文相关结构体和函数
@@ -23,19 +24,18 @@ int main() {
     
     log_info("正在启动DNS代理服务器...");
 
-    // 初始化系统资源，例如 Winsock
-    if (initSystem() != MYSUCCESS) {
-        log_error("系统初始化失败");
-        return 1; // 初始化失败，程序退出
-    }
+    // 初始化平台资源
+    platform_init();
 
     // 启动DNS代理服务器的核心逻辑
     if (start_dns_proxy_server() != MYSUCCESS) {
         log_error("DNS代理服务器启动失败");
-        cleanupSystem(); // 清理已初始化的资源
+        platform_cleanup(); // 清理已初始化的资源
         return 1; // 启动失败，程序退出
-    }// 清理系统资源
-    cleanupSystem();
+    }
+    
+    // 清理平台资源
+    platform_cleanup();
     
     // 清理日志文件
     cleanup_log_file();

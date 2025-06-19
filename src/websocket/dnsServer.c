@@ -1,5 +1,9 @@
 #include "websocket/dnsServer.h"
+#include "platform/platform.h"
 #include <time.h>  // 添加时间相关的头文件支持
+#include <errno.h> // 包含 errno.h 以使用 EWOULDBLOCK 和 EAGAIN
+#include <string.h> // 包含 memset 和 strcmp
+#include <arpa/inet.h> // 包含 inet_ntoa
 
 /*
  * ============================================================================
@@ -46,30 +50,24 @@ int start_dns_proxy_server() {
     log_debug("初始化映射表 (id最大值为: %d)", MAX_CONCURRENT_REQUESTS);
 
     // === 第二步：创建服务器socket ===
-    server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    server_socket = create_socket();
     if (server_socket == INVALID_SOCKET) {
-        log_error("创建SOCKET失败，错误代码: %d", WSAGetLastError());
+        log_error("创建SOCKET失败，错误代码: %d", platform_get_last_error());
         return MYERROR;
     }
     log_debug("SOCKET 创建成功");
 
     // === 第三步：设置服务器socket为非阻塞模式 ===
-    // 非阻塞模式使得recvfrom()在没有数据时立即返回WSAEWOULDBLOCK
-    // 而不是阻塞等待，这是实现并发处理的关键
-    u_long mode = 1;
-    if (ioctlsocket(server_socket, FIONBIO, &mode) == SOCKET_ERROR) {
-        log_error("设置socket非阻塞失败: %d", WSAGetLastError());
+    if (set_socket_nonblocking(server_socket) == SOCKET_ERROR) {
+        log_error("设置socket非阻塞失败: %d", platform_get_last_error());
         closesocket(server_socket);
         return MYERROR;
     }
     log_debug("设置socket非阻塞成功");
 
     // === 第四步：设置socket选项 ===
-    // SO_REUSEADDR允许快速重启服务器，避免"Address already in use"错误
-    int optval = 1;
-    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&optval, sizeof(optval)) == SOCKET_ERROR) {
-        log_warn("setsockopt(SO_REUSEADDR) 失败，错误码: %d", WSAGetLastError());
-        // 即使设置失败，也继续尝试绑定，因为这不一定是致命错误
+    if (set_socket_reuseaddr(server_socket) == SOCKET_ERROR) {
+        log_warn("setsockopt(SO_REUSEADDR) 失败，错误码: %d", platform_get_last_error());
     }
 
     // === 第五步：配置并绑定服务器地址 ===
@@ -80,7 +78,7 @@ int start_dns_proxy_server() {
 
     // 将套接字绑定到指定的IP地址和端口
     if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
-        log_error("监听端口号 %d 失败，错误码: %d", DNS_PORT, WSAGetLastError());
+        log_error("监听端口号 %d 失败，错误码: %d", DNS_PORT, platform_get_last_error());
         closesocket(server_socket);
         return MYERROR;
     }
@@ -125,7 +123,7 @@ int start_dns_proxy_server() {
         int activity = select(server_socket + 1, &read_fds, NULL, NULL, &timeout);
           // === 处理select()返回值 ===
         if (activity == SOCKET_ERROR) {
-            log_error("select() 调用失败，错误码: %d", WSAGetLastError());
+            log_error("select() 调用失败，错误码: %d", platform_get_last_error());
             break; // 发生严重错误，退出主循环
         }
         
@@ -184,14 +182,10 @@ int start_dns_proxy_server() {
  * @return int 成功返回 MYSUCCESS，失败返回 MYERROR
  */
 int handle_receive()
-{
-    char receive_buffer[BUF_SIZE]; // 存储接收数据的缓冲区
+{    char receive_buffer[BUF_SIZE]; // 存储接收数据的缓冲区
     struct sockaddr_in source_addr; // 接收数据的源地址
-    int source_addr_len = sizeof(source_addr);
-    int receive_len = 0; // 接收到的数据长度
+    socklen_t source_addr_len = sizeof(source_addr);    int receive_len = 0; // 接收到的数据长度
     int receive_processed = 0;     // 本次处理的数据计数
-    
-    clock_t start_time = clock(); // 记录函数开始执行的时间
 
     // === 批量处理接收到的数据 ===
     while((receive_len = recvfrom(server_socket, receive_buffer, BUF_SIZE, 0, 
@@ -226,13 +220,18 @@ int handle_receive()
 
         free_dns_entity(dns_entity);
     }        
-    int error = WSAGetLastError();
+    int error = platform_get_last_error();
 
+#ifdef _WIN32
     if (error != WSAEWOULDBLOCK) {
-        log_error("从客户端接收数据时发生错误: %d", error);
-    } else if (receive_processed > 0) {
+#else
+    if (error != EWOULDBLOCK && error != EAGAIN) {
+#endif
+        log_error("从客户端接收数据时发生错误: %d", error);    } else if (receive_processed > 0) {
         log_debug("本批次已处理 %d 个客户端请求", receive_processed);
     }
+    
+    return MYSUCCESS;
 
 }
 
@@ -321,12 +320,14 @@ void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in client_add
 void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_addr,int source_len,int response_len) 
 {    // === 批量处理所有等待的上游响应 ===
     /*
+void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_addr,int source_len,int response_len) 
+{    // === 批量处理所有等待的上游响应 ===
+    /*
      * 与处理客户端请求类似，批量处理所有等待的响应。
      * 这样可以减少select()调用次数，提高处理效率。
      */
-    log_debug("收到来自上游的DNS响应 (%d 字节)", response_len);
-    log_debug("%s",dns_entity_to_string(dns_entity));
-    // === 提取响应Transaction ID ===
+    (void)source_addr; // 标记参数已使用，避免编译警告
+    (void)source_len;  // 标记参数已使用，避免编译警告=== 提取响应Transaction ID ===
     // 这是我们之前分配给上游请求的新ID
     unsigned short response_id = dns_entity->id;
     log_debug("正在处理上游ID为 %d 的响应", response_id);
@@ -360,7 +361,7 @@ void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_
     
 
 if (sendDnsPacket(server_socket, mapping->client_addr, dns_entity) == MYERROR) {
-        int send_error = WSAGetLastError();
+        int send_error = platform_get_last_error();
         log_error("向客户端 %s:%d 发送响应失败: %d",
                  inet_ntoa(mapping->client_addr.sin_addr), 
                  ntohs(mapping->client_addr.sin_port), send_error);

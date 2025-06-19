@@ -2,7 +2,7 @@
 #define WEBSOCKET_H
 
 //头文件
-#include <winsock2.h> // 包含 Winsock2 头文件，用于 Windows Sockets API
+#include "platform/platform.h" // 包含平台抽象层头文件
 #include "debug/debug.h"   // 包含调试相关的头文件
 #include "websocket/datagram.h" // 包含自定义的数据报头文件，定义了 DNS 报文相关结构体和函数
 
@@ -15,7 +15,6 @@
 
 
 //全局变量声明
-extern WSADATA wsaData;
 extern struct sockaddr_in upstream_addr;
 
 // 函数声明

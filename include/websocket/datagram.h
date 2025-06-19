@@ -1,8 +1,7 @@
 #ifndef DATAGRAM_H
 #define DATAGRAM_H
 
-#include <winsock2.h> // 包含 Winsock2 头文件，用于 Windows Sockets API
-#include <ws2tcpip.h> // 包含 TCP/IP 协议相关的头文件
+#include "platform/platform.h" // 包含平台抽象层头文件
 #include "debug/debug.h"   // 包含调试相关的头文件
 
 

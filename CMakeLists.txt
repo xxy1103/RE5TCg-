@@ -34,15 +34,10 @@ file(GLOB_RECURSE SOURCES "src/*.c")
 # 创建可执行文件
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-# Windows特定设置
+# 平台特定设置
 if(WIN32)
-    # 链接Winsock2库
-    target_link_libraries(${PROJECT_NAME} ws2_32)
-    
-    # 如果使用MinGW，可能需要额外的库
-    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-        target_link_libraries(${PROJECT_NAME} wsock32)
-    endif()
+    # 在Windows上，链接Winsock2库
+    target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32)
 endif()
 
 # 设置输出目录
