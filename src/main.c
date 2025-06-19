@@ -18,7 +18,7 @@
 int main() {    
     // 初始化日志文件
     init_log_file();
-      // 设置日志记录级别为 DEBUG 以查看更多信息
+    // 设置日志记录级别为 DEBUG 以查看更多信息
     set_log_level(LOG_LEVEL_DEBUG);
     
     log_info("正在启动DNS代理服务器...");

@@ -7,11 +7,6 @@
 #include "debug/debug.h"
 #include <time.h>
 
-// 定义最大并发请求数和超时时间
-
-
-
-
 
 // DNS代理服务器函数
 int start_dns_proxy_server();

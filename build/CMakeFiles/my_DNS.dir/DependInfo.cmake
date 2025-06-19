@@ -8,6 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "D:/windows/desktop/DNS/my_DNS/src/DNScache/relayBuild.c" "CMakeFiles/my_DNS.dir/src/DNScache/relayBuild.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/DNScache/relayBuild.c.obj.d"
   "D:/windows/desktop/DNS/my_DNS/src/debug/debug.c" "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj.d"
   "D:/windows/desktop/DNS/my_DNS/src/idmapping/idmapping.c" "CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj.d"
   "D:/windows/desktop/DNS/my_DNS/src/main.c" "CMakeFiles/my_DNS.dir/src/main.c.obj" "gcc" "CMakeFiles/my_DNS.dir/src/main.c.obj.d"

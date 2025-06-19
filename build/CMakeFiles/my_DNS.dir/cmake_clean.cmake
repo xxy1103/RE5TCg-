@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/my_DNS.dir/src/DNScache/relayBuild.c.obj"
+  "CMakeFiles/my_DNS.dir/src/DNScache/relayBuild.c.obj.d"
   "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj"
   "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj.d"
   "CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj"

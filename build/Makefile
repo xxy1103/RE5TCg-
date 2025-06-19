@@ -128,6 +128,30 @@ my_DNS/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/build
 .PHONY : my_DNS/fast
 
+src/DNScache/relayBuild.obj: src/DNScache/relayBuild.c.obj
+.PHONY : src/DNScache/relayBuild.obj
+
+# target to build an object file
+src/DNScache/relayBuild.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/DNScache/relayBuild.c.obj
+.PHONY : src/DNScache/relayBuild.c.obj
+
+src/DNScache/relayBuild.i: src/DNScache/relayBuild.c.i
+.PHONY : src/DNScache/relayBuild.i
+
+# target to preprocess a source file
+src/DNScache/relayBuild.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/DNScache/relayBuild.c.i
+.PHONY : src/DNScache/relayBuild.c.i
+
+src/DNScache/relayBuild.s: src/DNScache/relayBuild.c.s
+.PHONY : src/DNScache/relayBuild.s
+
+# target to generate assembly for a file
+src/DNScache/relayBuild.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\my_DNS.dir\build.make CMakeFiles/my_DNS.dir/src/DNScache/relayBuild.c.s
+.PHONY : src/DNScache/relayBuild.c.s
+
 src/debug/debug.obj: src/debug/debug.c.obj
 .PHONY : src/debug/debug.obj
 
@@ -281,6 +305,9 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... my_DNS
+	@echo ... src/DNScache/relayBuild.obj
+	@echo ... src/DNScache/relayBuild.i
+	@echo ... src/DNScache/relayBuild.s
 	@echo ... src/debug/debug.obj
 	@echo ... src/debug/debug.i
 	@echo ... src/debug/debug.s
