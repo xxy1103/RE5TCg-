@@ -6,6 +6,7 @@
         "datagram.h": "c",
         "string.h": "c",
         "debug.h": "c",
-        "*.bak": "c"
+        "*.bak": "c",
+        "errno.h": "c"
     }
 }

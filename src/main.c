@@ -22,14 +22,19 @@ int main() {
     // 设置日志记录级别为 DEBUG 以查看更多信息
     set_log_level(LOG_LEVEL_DEBUG);
     
-    log_info("正在启动DNS代理服务器...");
+    log_info("正在启动多线程DNS代理服务器...");
+    log_info("本版本特性：");
+    log_info("  - 多线程并行处理");
+    log_info("  - I/O与计算分离");
+    log_info("  - 线程安全的ID映射");
+    log_info("  - 高并发性能");
 
     // 初始化平台资源
     platform_init();
 
-    // 启动DNS代理服务器的核心逻辑
-    if (start_dns_proxy_server() != MYSUCCESS) {
-        log_error("DNS代理服务器启动失败");
+    // 启动多线程DNS代理服务器
+    if (start_dns_proxy_server_threaded() != MYSUCCESS) {
+        log_error("多线程DNS代理服务器启动失败");
         platform_cleanup(); // 清理已初始化的资源
         return 1; // 启动失败，程序退出
     }
@@ -40,5 +45,6 @@ int main() {
     // 清理日志文件
     cleanup_log_file();
     
+    log_info("多线程DNS代理服务器已正常退出");
     return 0; // 程序正常结束
 }

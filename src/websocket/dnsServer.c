@@ -1,6 +1,7 @@
 #include "websocket/dnsServer.h"
 #include "platform/platform.h"
-#include "Thread/thread_pool.h" // 包含线程池头文件
+#include "Thread/thread_pool.h"
+#include "websocket/upstream_config.h"
 #include <time.h>  // 添加时间相关的头文件支持
 #include <string.h> // 包含 memset 和 strcmp
 
@@ -18,6 +19,9 @@ static dns_mapping_table_t g_mapping_table;
 // 上游DNS套接字（全局，避免重复创建和销毁）
 // 使用单个全局socket可以减少系统调用开销，提高性能
 static SOCKET server_socket = INVALID_SOCKET;
+
+// 线程池实例（用于多线程处理）
+static dns_thread_pool_t g_dns_thread_pool;
 
 /*
  * ============================================================================
@@ -48,8 +52,6 @@ int start_dns_proxy_server() {
     // === 第一步：初始化映射表 ===
     init_mapping_table(&g_mapping_table);
     log_debug("初始化映射表 (id最大值为: %d)", MAX_CONCURRENT_REQUESTS);
-
-    init_upstream_addr();
 
     // === 第二步：创建服务器socket ===
     server_socket = create_socket();
@@ -134,22 +136,7 @@ int start_dns_proxy_server() {
         // === 处理客户端新请求 ===
         // 检查服务器socket是否有可读数据（新的客户端请求）
         if (FD_ISSET(server_socket, &read_fds)) {
-            dns_task_t task;
-            task.source_addr_len = sizeof(task.source_addr);
-            task.buffer_len = recvfrom(server_socket, task.buffer, BUF_SIZE, 0, 
-                                (struct sockaddr*)&task.source_addr, &task.source_addr_len);
-            if(task.buffer_len > 0){
-                char* source_ip = inet_ntoa(task.source_addr.sin_addr);
-             
-                // 判断是客户端请求还是上游响应
-                if (strcmp(DNS_SERVER, source_ip) != 0) {
-                    task.type = TASK_CLIENT_REQUEST;
-                } else {
-                    task.type = TASK_UPSTREAM_RESPONSE;
-                }
-            }
-            task_queue_push(&(g_thread_pool->task_queue),&task);
-
+            handle_receive();
         }
         
         // === 定期维护任务 ===
@@ -160,7 +147,7 @@ int start_dns_proxy_server() {
         static time_t last_cleanup = 0;
         time_t current_time = time(NULL);
         if (current_time - last_cleanup > 10) {  // 清理间隔：10秒
-            thread_pool_cleanup_mappings_safe();
+            cleanup_expired_mappings(&g_mapping_table);
             last_cleanup = current_time;
               // 记录服务器状态（每10秒一次）
             log_debug("服务器状态: 活跃映射数=%d, 运行时间=%ld 秒", 
@@ -204,7 +191,10 @@ int handle_receive()
     socklen_t source_addr_len = sizeof(source_addr);    int receive_len = 0; // 接收到的数据长度
     int receive_processed = 0;     // 本次处理的数据计数
 
-
+    // === 批量处理接收到的数据 ===
+    while((receive_len = recvfrom(server_socket, receive_buffer, BUF_SIZE, 0, 
+                                 (struct sockaddr*)&source_addr, &source_addr_len)) > 0)
+    {
         receive_processed++;
         char* source_ip = inet_ntoa(source_addr.sin_addr);        
         // === 验证请求数据完整性 ===
@@ -232,7 +222,9 @@ int handle_receive()
         // 处理完成后释放DNS实体内存
 
         //log_debug("%s",dns_entity_to_string(dns_entity));
-     
+
+        free_dns_entity(dns_entity);
+    }        
     int error = platform_get_last_error();
 
 #ifdef _WIN32
@@ -290,25 +282,24 @@ void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in client_add
     * 1. 多个客户端可能使用相同的Transaction ID
     * 2. 我们需要确保每个上游请求都有唯一的ID
     * 3. 响应返回时要恢复原始ID给对应客户端
-    */    
-   if (add_mapping(&g_mapping_table, original_id, &client_addr, client_addr_len, &new_id) != MYSUCCESS) {
+    */      
+   if (thread_pool_add_mapping_safe(original_id, &client_addr, client_addr_len, &new_id) != MYSUCCESS) {
         log_error("为来自 %s:%d 的请求添加映射失败 (原始ID=%d)",
                     inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), original_id);
         client_addr_len = sizeof(client_addr);  // 重置地址长度
         return;
-    }
-    // === 修改请求的Transaction ID ===
+    }    // === 修改请求的Transaction ID ===
     // 将客户端的原始ID替换为我们分配的新ID
     dns_entity->id = new_id;
     log_debug("修改请求ID: %d -> %d", original_id, new_id);
         
-          // === 转发请求到上游DNS服务器 ===
-    if (sendDnsPacket(server_socket,upstream_addr,dns_entity) != MYSUCCESS) {
+    // === 转发请求到随机选择的上游DNS服务器 ===
+    if (sendDnsPacketToRandomUpstream(server_socket, dns_entity) != MYSUCCESS) {
         log_error("转发请求到上游服务器失败 (新ID=%d)", new_id);
         // 转发失败，清理刚创建的映射
-        remove_mapping(&g_mapping_table, new_id);
+        thread_pool_remove_mapping_safe(new_id);
     } else {
-        log_debug("成功转发请求，上游ID=%d", new_id);
+        log_debug("成功转发请求到随机上游服务器，上游ID=%d", new_id);
     }
         
     // === 重置地址长度供下次使用 ===
@@ -333,9 +324,6 @@ void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in client_add
 void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_addr,int source_len,int response_len) 
 {    // === 批量处理所有等待的上游响应 ===
     /*
-void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_addr,int source_len,int response_len) 
-{    // === 批量处理所有等待的上游响应 ===
-    /*
      * 与处理客户端请求类似，批量处理所有等待的响应。
      * 这样可以减少select()调用次数，提高处理效率。
      */
@@ -344,7 +332,7 @@ void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_
     // 这是我们之前分配给上游请求的新ID
     unsigned short response_id = dns_entity->id;
     log_debug("正在处理上游ID为 %d 的响应", response_id);
-    
+    log_debug("%s",dns_entity_to_string(dns_entity));
     // === 查找对应的映射关系 ===
     /*
      * 根据响应ID查找原始客户端信息。
@@ -353,7 +341,8 @@ void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_
      * 2. 映射已过期被清理
      * 3. 收到重复响应
      * 4. 恶意或错误的响应
-     */    dns_mapping_entry_t* mapping = find_mapping_by_new_id(&g_mapping_table, response_id);
+     */    
+    dns_mapping_entry_t* mapping = thread_pool_find_mapping_safe(response_id);
     if (!mapping) {
         log_warn("未找到响应ID %d 对应的映射，丢弃响应", response_id);
         source_len = sizeof(source_addr);  // 重置地址长度
@@ -389,10 +378,263 @@ if (sendDnsPacket(server_socket, mapping->client_addr, dns_entity) == MYERROR) {
      * DNS请求-响应周期完成，清理映射以释放资源。
      * 这是关键步骤，防止映射表泄漏。
      */
-    remove_mapping(&g_mapping_table, response_id);
+    thread_pool_remove_mapping_safe(response_id);
         
     // === 重置地址长度供下次使用 ===
     source_len = sizeof(source_addr);
 
+}
+
+/**
+ * @brief 多线程版本的DNS代理服务器主函数
+ * 
+ * 这是DNS代理服务器的多线程版本，实现了：
+ * 1. I/O线程负责网络数据接收和发送
+ * 2. 工作线程池负责DNS数据包解析和处理
+ * 3. 线程安全的ID映射表操作
+ * 4. 高并发性能和多核CPU利用
+ * 
+ * 架构特点：
+ * - 主线程作为I/O线程，专门处理网络事件
+ * - 工作线程池处理CPU密集型任务
+ * - 线程安全的资源访问
+ * - 优雅的关闭机制
+ * 
+ * @return int 成功返回 MYSUCCESS，失败返回 MYERROR
+ */
+int start_dns_proxy_server_threaded() {
+    struct sockaddr_in server_addr; // 服务器地址结构    log_info("=== 启动多线程DNS代理服务器 ===");    
+    
+    // === 第一步：初始化DNS上游服务器池 ===
+    // 尝试从配置文件加载DNS服务器
+    if (upstream_pool_load_from_file(&g_upstream_pool, "upstream_dns.conf") != MYSUCCESS) {
+        log_info("从配置文件加载失败");
+        return MYERROR;
+    }
+    
+    log_debug("初始化DNS上游服务器池成功，共加载 %d 个服务器", g_upstream_pool.server_count);
+    upstream_pool_print_status(&g_upstream_pool);
+
+    // === 第二步：初始化映射表 ===
+    init_mapping_table(&g_mapping_table);
+    log_debug("初始化映射表 (最大并发请求数: %d)", MAX_CONCURRENT_REQUESTS);
+
+
+    // === 第二步：创建服务器socket ===
+    server_socket = create_socket();
+    if (server_socket == INVALID_SOCKET) {
+        log_error("创建SOCKET失败，错误代码: %d", platform_get_last_error());
+        return MYERROR;
+    }
+    log_debug("SOCKET 创建成功");
+
+    // === 第三步：设置服务器socket为非阻塞模式 ===
+    if (set_socket_nonblocking(server_socket) == SOCKET_ERROR) {
+        log_error("设置socket非阻塞失败: %d", platform_get_last_error());
+        closesocket(server_socket);
+        return MYERROR;
+    }
+    log_debug("设置socket非阻塞成功");
+
+    // === 第四步：设置socket选项 ===
+    if (set_socket_reuseaddr(server_socket) == SOCKET_ERROR) {
+        log_warn("setsockopt(SO_REUSEADDR) 失败，错误码: %d", platform_get_last_error());
+    }
+
+    // === 第五步：配置并绑定服务器地址 ===
+    memset(&server_addr, 0, sizeof(server_addr)); // 清零结构体
+    server_addr.sin_family = AF_INET;              // IPv4协议族
+    server_addr.sin_addr.s_addr = INADDR_ANY;      // 监听所有网络接口
+    server_addr.sin_port = htons(DNS_PORT);        // DNS标准端口53
+
+    // 将套接字绑定到指定的IP地址和端口
+    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
+        log_error("监听端口号 %d 失败，错误码: %d", DNS_PORT, platform_get_last_error());
+        closesocket(server_socket);
+        return MYERROR;
+    }
+
+    log_info("DNS服务成功绑定到端口: %d", DNS_PORT);
+
+    // === 第六步：初始化线程池 ===
+    int worker_count = 0; // 使用默认线程数（基于CPU核心数）
+    int queue_size = 0;   // 使用默认队列大小
+    
+    if (thread_pool_init(&g_dns_thread_pool, worker_count, queue_size, 
+                        server_socket, &g_mapping_table) != MYSUCCESS) {
+        log_error("线程池初始化失败");
+        closesocket(server_socket);
+        return MYERROR;
+    }
+
+    // 设置全局线程池实例，以便其他模块可以访问互斥锁
+    thread_pool_set_global_instance(&g_dns_thread_pool);
+
+    // === 第七步：启动线程池 ===
+    if (thread_pool_start(&g_dns_thread_pool) != MYSUCCESS) {
+        log_error("线程池启动失败");
+        thread_pool_destroy(&g_dns_thread_pool);
+        closesocket(server_socket);
+        return MYERROR;
+    }
+
+    log_info("多线程DNS代理服务器启动成功！");
+    log_info("监听端口: %d, 工作线程数: %d", DNS_PORT, g_dns_thread_pool.worker_count);
+
+    // === 第八步：主I/O事件循环 ===
+    /*
+     * 在多线程架构中，主线程专门负责I/O操作：
+     * 1. 监听网络事件（socket可读）
+     * 2. 接收UDP数据包
+     * 3. 将数据包封装成任务并提交给线程池
+     * 4. 定期执行维护任务
+     * 
+     * 这种设计的优势：
+     * - I/O操作不被CPU密集型任务阻塞
+     * - 工作线程专注于数据处理
+     * - 充分利用多核CPU
+     * - 提高系统整体吞吐量
+     */
+    int server_running = 1;
+    time_t last_cleanup = time(NULL);
+    time_t last_status_print = time(NULL);
+    
+    while (server_running) {
+        fd_set read_fds;        // 可读文件描述符集合
+        struct timeval timeout; // select()超时设置
+        
+        // === 准备监听的socket集合 ===
+        FD_ZERO(&read_fds);                    // 清空文件描述符集合
+        FD_SET(server_socket, &read_fds);      // 添加服务器socket
+        
+        // === 设置select超时时间 ===
+        // 较短的超时时间确保及时响应维护任务
+        timeout.tv_sec = 1;
+        timeout.tv_usec = 0;
+        
+        // === 调用select()等待网络事件 ===
+        int activity = select(server_socket + 1, &read_fds, NULL, NULL, &timeout);
+        
+        // === 处理select()返回值 ===
+        if (activity == SOCKET_ERROR) {
+            log_error("select() 调用失败，错误码: %d", platform_get_last_error());
+            break; // 发生严重错误，退出主循环
+        }
+        
+        // === 处理网络数据接收 ===
+        if (activity > 0 && FD_ISSET(server_socket, &read_fds)) {
+            handle_receive_threaded();
+        }
+        
+        // === 定期维护任务 ===
+        time_t current_time = time(NULL);
+        
+        // 每10秒清理一次过期映射
+        if (current_time - last_cleanup > 10) {
+            thread_pool_cleanup_mappings_safe();
+            last_cleanup = current_time;
+            log_debug("定期清理过期映射完成");
+        }
+        
+        // 每30秒打印一次服务器状态
+        if (current_time - last_status_print > 30) {
+            thread_pool_print_status(&g_dns_thread_pool);
+            last_status_print = current_time;
+        }
+    }    // === 清理资源 ===
+    log_info("正在关闭多线程DNS代理服务器...");
+    
+    // 停止线程池（给工作线程5秒时间完成当前任务）
+    thread_pool_stop(&g_dns_thread_pool, 5000);
+    
+    // 销毁线程池
+    thread_pool_destroy(&g_dns_thread_pool);
+    
+    // 清除全局线程池实例
+    thread_pool_set_global_instance(NULL);
+    
+    // 清理DNS上游服务器池
+    upstream_pool_destroy(&g_upstream_pool);
+    log_debug("DNS上游服务器池已清理");
+    
+    // 关闭服务器socket
+    closesocket(server_socket);
+    
+    log_info("多线程DNS代理服务器已关闭");
+    return MYSUCCESS;
+}
+
+/**
+ * @brief 多线程版本的网络数据接收处理函数
+ * 
+ * 与单线程版本的主要区别：
+ * 1. 不直接解析和处理DNS数据包
+ * 2. 将接收到的原始数据提交给线程池
+ * 3. 由工作线程异步处理具体的DNS逻辑
+ * 4. 提高I/O处理的响应速度
+ */
+int handle_receive_threaded() {
+    char receive_buffer[BUF_SIZE]; // 存储接收数据的缓冲区
+    struct sockaddr_in source_addr; // 接收数据的源地址
+    socklen_t source_addr_len = sizeof(source_addr);
+    int receive_len = 0; // 接收到的数据长度
+    int receive_processed = 0;     // 本次处理的数据计数
+
+    // === 批量处理接收到的数据 ===
+    // 使用while循环确保一次select事件中处理所有可用数据
+    while((receive_len = recvfrom(server_socket, receive_buffer, BUF_SIZE, 0, 
+                                 (struct sockaddr*)&source_addr, &source_addr_len)) > 0) {
+        receive_processed++;
+        char* source_ip = inet_ntoa(source_addr.sin_addr);
+        
+        // === 验证请求数据完整性 ===
+        if (receive_len < 2) {
+            log_warn("请求数据过短 (%d 字节)，来源: %s，忽略处理", receive_len, source_ip);
+            source_addr_len = sizeof(source_addr);  // 重置地址长度
+            continue;
+        }
+
+        // === 确定任务类型 ===
+        task_type_t task_type;
+        if (upstream_pool_contains_server(&g_upstream_pool, source_ip) == 0) {
+            // 来自客户端的请求
+            task_type = TASK_CLIENT_REQUEST;
+            log_debug("收到客户端请求: %s, 长度: %d 字节", source_ip, receive_len);
+        } else {
+            // 来自上游DNS服务器的响应
+            task_type = TASK_UPSTREAM_RESPONSE;
+            log_debug("收到上游响应: %s, 长度: %d 字节", source_ip, receive_len);
+        }
+
+        // === 提交任务到线程池 ===
+        if (thread_pool_submit_task(&g_dns_thread_pool, receive_buffer, receive_len,
+                                   source_addr, source_addr_len, task_type) != MYSUCCESS) {
+            log_warn("任务提交失败，可能是队列已满，来源: %s", source_ip);
+        }
+
+        // 重置地址长度，为下一次接收准备
+        source_addr_len = sizeof(source_addr);
+    }
+
+    // 记录批量处理结果
+    if (receive_processed > 0) {
+        log_debug("批量接收处理完成，本次处理: %d 个数据包", receive_processed);
+    }
+
+    // 检查是否是由于错误而退出循环
+    if (receive_len < 0) {
+        int error = platform_get_last_error();
+        // 对于非阻塞socket，EAGAIN/EWOULDBLOCK是正常的
+#ifdef _WIN32
+        if (error != WSAEWOULDBLOCK) {
+#else
+        if (error != EAGAIN && error != EWOULDBLOCK) {
+#endif
+            log_error("recvfrom() 失败，错误码: %d", error);
+            return MYERROR;
+        }
+    }
+
+    return MYSUCCESS;
 }
 

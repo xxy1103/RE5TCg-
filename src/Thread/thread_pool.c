@@ -10,7 +10,7 @@
 // ============================================================================
 // 全局变量定义
 // ============================================================================
-dns_thread_pool_t* g_thread_pool = NULL;
+static dns_thread_pool_t* g_thread_pool = NULL;
 
 // ============================================================================
 // 内部辅助函数声明
@@ -18,9 +18,6 @@ dns_thread_pool_t* g_thread_pool = NULL;
 static int calculate_optimal_threads(void);
 static void update_worker_activity(worker_thread_t* worker);
 static void increment_stats_counter(dns_thread_pool_t* pool, const char* counter_type);
-
-
-
 
 // ============================================================================
 // 任务队列操作函数实现

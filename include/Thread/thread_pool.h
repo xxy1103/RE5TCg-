@@ -42,7 +42,6 @@ typedef struct {
     pthread_cond_t not_empty;           // 队列非空条件变量
     pthread_cond_t not_full;            // 队列非满条件变量
 } task_queue_t;
-
 // 工作线程信息结构
 typedef struct {
     pthread_t thread_id;                // 线程ID
@@ -80,14 +79,10 @@ typedef struct {
     
     // 统计信息
     thread_pool_stats_t stats;          // 性能统计
-    
-    // 全局资源引用
-    SOCKET server_socket;               // 服务器Socket引用
+      // 全局资源引用
+    SOCKET server_socket;               // 服务器Socket引用    
     dns_mapping_table_t* mapping_table; // ID映射表引用
 } dns_thread_pool_t;
-
-// 全局线程池实例（用于访问互斥锁）
-extern dns_thread_pool_t* g_thread_pool;
 
 /**
  * @brief 设置全局线程池实例
