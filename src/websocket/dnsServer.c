@@ -72,7 +72,7 @@ int start_dns_proxy_server() {
     }    // === 第五步：配置并绑定服务器地址 ===
     memset(&server_addr, 0, sizeof(server_addr)); // 清零结构体
     server_addr.sin_family = AF_INET;              // IPv4协议族
-    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1"); // 监听本地回环接口
+    server_addr.sin_addr.s_addr = INADDR_ANY; // 监听本地回环接口
     server_addr.sin_port = htons(DNS_PORT);        // DNS标准端口53
 
     // 将套接字绑定到指定的IP地址和端口
