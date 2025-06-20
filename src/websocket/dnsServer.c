@@ -69,7 +69,8 @@ int start_dns_proxy_server() {
     // === 第四步：设置socket选项 ===
     if (set_socket_reuseaddr(server_socket) == SOCKET_ERROR) {
         log_warn("setsockopt(SO_REUSEADDR) 失败，错误码: %d", platform_get_last_error());
-    }    // === 第五步：配置并绑定服务器地址 ===
+    }    
+    // === 第五步：配置并绑定服务器地址 ===
     memset(&server_addr, 0, sizeof(server_addr)); // 清零结构体
     server_addr.sin_family = AF_INET;              // IPv4协议族
     server_addr.sin_addr.s_addr = INADDR_ANY; // 监听本地回环接口

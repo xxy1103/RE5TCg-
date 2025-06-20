@@ -1,6 +1,8 @@
 #include "platform/platform.h"
 #include <stdio.h>
 
+
+
 void platform_init() {
 #ifdef _WIN32
     WSADATA wsaData;
@@ -26,7 +28,9 @@ int set_socket_reuseaddr(SOCKET sock) {
 #ifdef _WIN32
     return setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&optval, sizeof(optval));
 #else
-    return setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    return setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+    
 #endif
 }
 
