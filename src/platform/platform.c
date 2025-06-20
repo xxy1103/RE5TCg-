@@ -18,7 +18,7 @@ void platform_cleanup() {
 }
 
 SOCKET create_socket() {
-    return socket(AF_INET, SOCK_DGRAM, 0);
+    return socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 }
 
 int set_socket_reuseaddr(SOCKET sock) {

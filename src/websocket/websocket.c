@@ -16,6 +16,7 @@ void init_upstream_addr()
 
 
 
+
 int sendDnsPacket(SOCKET sock,struct sockaddr_in address,const DNS_ENTITY* dns_entity)
 {
     char buf[BUF_SIZE];      // 用于发送数据的缓冲区    

@@ -19,6 +19,7 @@ extern struct sockaddr_in upstream_addr;
 
 // 函数声明
 int initSystem();
+void init_upstream_addr();
 int sendDnsPacket(SOCKET sock,struct sockaddr_in address,const DNS_ENTITY* dns_entity);
 int parseDnsResponse(SOCKET sock);
 void cleanupSystem();

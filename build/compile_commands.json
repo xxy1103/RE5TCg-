@@ -1,0 +1,50 @@
+[
+{
+  "directory": "Z:/home/ulna/my_DNS/build",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\DNScache\\relayBuild.c.obj -c Z:\\home\\ulna\\my_DNS\\src\\DNScache\\relayBuild.c",
+  "file": "Z:/home/ulna/my_DNS/src/DNScache/relayBuild.c",
+  "output": "CMakeFiles/my_DNS.dir/src/DNScache/relayBuild.c.obj"
+},
+{
+  "directory": "Z:/home/ulna/my_DNS/build",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\debug\\debug.c.obj -c Z:\\home\\ulna\\my_DNS\\src\\debug\\debug.c",
+  "file": "Z:/home/ulna/my_DNS/src/debug/debug.c",
+  "output": "CMakeFiles/my_DNS.dir/src/debug/debug.c.obj"
+},
+{
+  "directory": "Z:/home/ulna/my_DNS/build",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\idmapping\\idmapping.c.obj -c Z:\\home\\ulna\\my_DNS\\src\\idmapping\\idmapping.c",
+  "file": "Z:/home/ulna/my_DNS/src/idmapping/idmapping.c",
+  "output": "CMakeFiles/my_DNS.dir/src/idmapping/idmapping.c.obj"
+},
+{
+  "directory": "Z:/home/ulna/my_DNS/build",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\main.c.obj -c Z:\\home\\ulna\\my_DNS\\src\\main.c",
+  "file": "Z:/home/ulna/my_DNS/src/main.c",
+  "output": "CMakeFiles/my_DNS.dir/src/main.c.obj"
+},
+{
+  "directory": "Z:/home/ulna/my_DNS/build",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\platform\\platform.c.obj -c Z:\\home\\ulna\\my_DNS\\src\\platform\\platform.c",
+  "file": "Z:/home/ulna/my_DNS/src/platform/platform.c",
+  "output": "CMakeFiles/my_DNS.dir/src/platform/platform.c.obj"
+},
+{
+  "directory": "Z:/home/ulna/my_DNS/build",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\websocket\\datagram.c.obj -c Z:\\home\\ulna\\my_DNS\\src\\websocket\\datagram.c",
+  "file": "Z:/home/ulna/my_DNS/src/websocket/datagram.c",
+  "output": "CMakeFiles/my_DNS.dir/src/websocket/datagram.c.obj"
+},
+{
+  "directory": "Z:/home/ulna/my_DNS/build",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\websocket\\dnsServer.c.obj -c Z:\\home\\ulna\\my_DNS\\src\\websocket\\dnsServer.c",
+  "file": "Z:/home/ulna/my_DNS/src/websocket/dnsServer.c",
+  "output": "CMakeFiles/my_DNS.dir/src/websocket/dnsServer.c.obj"
+},
+{
+  "directory": "Z:/home/ulna/my_DNS/build",
+  "command": "D:\\msys64\\mingw64\\bin\\gcc.exe  @CMakeFiles/my_DNS.dir/includes_C.rsp -g -std=gnu99 -Wall -Wextra -pedantic -o CMakeFiles\\my_DNS.dir\\src\\websocket\\websocket.c.obj -c Z:\\home\\ulna\\my_DNS\\src\\websocket\\websocket.c",
+  "file": "Z:/home/ulna/my_DNS/src/websocket/websocket.c",
+  "output": "CMakeFiles/my_DNS.dir/src/websocket/websocket.c.obj"
+}
+]

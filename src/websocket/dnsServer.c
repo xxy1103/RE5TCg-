@@ -48,6 +48,8 @@ int start_dns_proxy_server() {
     init_mapping_table(&g_mapping_table);
     log_debug("初始化映射表 (id最大值为: %d)", MAX_CONCURRENT_REQUESTS);
 
+    init_upstream_addr();
+
     // === 第二步：创建服务器socket ===
     server_socket = create_socket();
     if (server_socket == INVALID_SOCKET) {
