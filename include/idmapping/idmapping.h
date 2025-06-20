@@ -3,6 +3,7 @@
 
 #include "websocket/websocket.h" // 包含自定义的 WebSocket 头文件
 #include <time.h>
+#include <string.h>
 
 
 #define MAX_CONCURRENT_REQUESTS 1000  // 最大并发请求数

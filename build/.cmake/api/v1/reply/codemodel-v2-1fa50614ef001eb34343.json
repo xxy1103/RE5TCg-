@@ -6,7 +6,7 @@
 			[
 				{
 					"build" : ".",
-					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.10"
@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "my_DNS::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-my_DNS-Debug-4d5b109f831d3f084393.json",
+					"jsonFile" : "target-my_DNS-Debug-fa2af8cda4a539f84f60.json",
 					"name" : "my_DNS",
 					"projectIndex" : 0
 				}
@@ -49,12 +49,12 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/ulna/my_DNS/build",
-		"source" : "/home/ulna/my_DNS"
+		"build" : "D:/windows/desktop/DNS/my_DNS/build",
+		"source" : "D:/windows/desktop/DNS/my_DNS"
 	},
 	"version" : 
 	{
 		"major" : 2,
-		"minor" : 6
+		"minor" : 8
 	}
 }

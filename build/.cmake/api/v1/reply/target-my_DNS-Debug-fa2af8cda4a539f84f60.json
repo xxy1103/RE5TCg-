@@ -2,7 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "bin/my_DNS"
+			"path" : "bin/my_DNS.exe"
+		},
+		{
+			"path" : "bin/my_DNS.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -11,6 +14,7 @@
 		"commands" : 
 		[
 			"add_executable",
+			"target_link_libraries",
 			"add_compile_options",
 			"include_directories"
 		],
@@ -32,11 +36,17 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 25,
+				"line" : 40,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
+				"file" : 0,
+				"line" : 25,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
 				"file" : 0,
 				"line" : 29,
 				"parent" : 0
@@ -52,23 +62,23 @@
 					"fragment" : "-g -std=gnu99"
 				},
 				{
-					"backtrace" : 2,
+					"backtrace" : 3,
 					"fragment" : "-Wall"
 				},
 				{
-					"backtrace" : 2,
+					"backtrace" : 3,
 					"fragment" : "-Wextra"
 				},
 				{
-					"backtrace" : 2,
+					"backtrace" : 3,
 					"fragment" : "-pedantic"
 				}
 			],
 			"includes" : 
 			[
 				{
-					"backtrace" : 3,
-					"path" : "/home/ulna/my_DNS/include"
+					"backtrace" : 4,
+					"path" : "D:/windows/desktop/DNS/my_DNS/include"
 				}
 			],
 			"language" : "C",
@@ -103,14 +113,19 @@
 				"role" : "flags"
 			},
 			{
-				"fragment" : "",
-				"role" : "flags"
+				"backtrace" : 2,
+				"fragment" : "-lws2_32",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32",
+				"role" : "libraries"
 			}
 		],
 		"language" : "C"
 	},
 	"name" : "my_DNS",
-	"nameOnDisk" : "my_DNS",
+	"nameOnDisk" : "my_DNS.exe",
 	"paths" : 
 	{
 		"build" : ".",
