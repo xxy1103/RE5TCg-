@@ -1,3 +1,0 @@
-D:/windows/desktop/DNS/my_DNS/build/CMakeFiles/my_DNS.dir
-D:/windows/desktop/DNS/my_DNS/build/CMakeFiles/edit_cache.dir
-D:/windows/desktop/DNS/my_DNS/build/CMakeFiles/rebuild_cache.dir
