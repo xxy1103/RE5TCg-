@@ -4,6 +4,7 @@
 #include "websocket/websocket.h" // 包含自定义的 WebSocket 头文件
 #include "websocket/datagram.h" // 包含自定义的数据报头文件，定义了 DNS 报文相关结构体和函数
 #include "idmapping/idmapping.h" // 包含 ID 映射相关的头文件
+#include "Thread/thread_pool.h"
 #include "debug/debug.h"
 #include <time.h>
 

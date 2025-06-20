@@ -7,7 +7,7 @@
 
 
 #define MAX_CONCURRENT_REQUESTS 1000  // 最大并发请求数
-#define REQUEST_TIMEOUT 5             // 请求超时时间（秒）
+#define REQUEST_TIMEOUT 1             // 请求超时时间（秒）
 
 // 定义映射表项结构
 typedef struct {

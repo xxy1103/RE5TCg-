@@ -1,5 +1,6 @@
 #include "websocket/dnsServer.h"
 #include "platform/platform.h"
+#include "Thread/thread_pool.h" // 包含线程池头文件
 #include <time.h>  // 添加时间相关的头文件支持
 #include <string.h> // 包含 memset 和 strcmp
 
@@ -106,7 +107,7 @@ int start_dns_proxy_server() {
         // === 准备监听的socket集合 ===
         FD_ZERO(&read_fds);                    // 清空文件描述符集合
         FD_SET(server_socket, &read_fds);      // 添加服务器socket（监听客户端请求）
-          // === 设置select超时时间 ===
+        // === 设置select超时时间 ===
         // 1秒超时确保：
         // 1. 不会无限期阻塞
         // 2. 可以定期执行维护任务
@@ -133,7 +134,22 @@ int start_dns_proxy_server() {
         // === 处理客户端新请求 ===
         // 检查服务器socket是否有可读数据（新的客户端请求）
         if (FD_ISSET(server_socket, &read_fds)) {
-            handle_receive();
+            dns_task_t task;
+            task.source_addr_len = sizeof(task.source_addr);
+            task.buffer_len = recvfrom(server_socket, task.buffer, BUF_SIZE, 0, 
+                                (struct sockaddr*)&task.source_addr, &task.source_addr_len);
+            if(task.buffer_len > 0){
+                char* source_ip = inet_ntoa(task.source_addr.sin_addr);
+             
+                // 判断是客户端请求还是上游响应
+                if (strcmp(DNS_SERVER, source_ip) != 0) {
+                    task.type = TASK_CLIENT_REQUEST;
+                } else {
+                    task.type = TASK_UPSTREAM_RESPONSE;
+                }
+            }
+            task_queue_push(&(g_thread_pool->task_queue),&task);
+
         }
         
         // === 定期维护任务 ===
@@ -144,7 +160,7 @@ int start_dns_proxy_server() {
         static time_t last_cleanup = 0;
         time_t current_time = time(NULL);
         if (current_time - last_cleanup > 10) {  // 清理间隔：10秒
-            cleanup_expired_mappings(&g_mapping_table);
+            thread_pool_cleanup_mappings_safe();
             last_cleanup = current_time;
               // 记录服务器状态（每10秒一次）
             log_debug("服务器状态: 活跃映射数=%d, 运行时间=%ld 秒", 
@@ -188,12 +204,10 @@ int handle_receive()
     socklen_t source_addr_len = sizeof(source_addr);    int receive_len = 0; // 接收到的数据长度
     int receive_processed = 0;     // 本次处理的数据计数
 
-    // === 批量处理接收到的数据 ===
-    while((receive_len = recvfrom(server_socket, receive_buffer, BUF_SIZE, 0, 
-                                 (struct sockaddr*)&source_addr, &source_addr_len)) > 0)
-    {
+
         receive_processed++;
-        char* source_ip = inet_ntoa(source_addr.sin_addr);        // === 验证请求数据完整性 ===
+        char* source_ip = inet_ntoa(source_addr.sin_addr);        
+        // === 验证请求数据完整性 ===
         if (receive_len < 2) {
             log_warn("请求数据过短 (%d 字节)，忽略处理", receive_len);
             source_addr_len = sizeof(source_addr);  // 重置地址长度
@@ -218,9 +232,7 @@ int handle_receive()
         // 处理完成后释放DNS实体内存
 
         //log_debug("%s",dns_entity_to_string(dns_entity));
-
-        free_dns_entity(dns_entity);
-    }        
+     
     int error = platform_get_last_error();
 
 #ifdef _WIN32
