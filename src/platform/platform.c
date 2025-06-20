@@ -67,7 +67,7 @@ int platform_get_last_error() {
 // 跨平台线程函数实现
 // ============================================================================
 
-int platform_mutex_init(pthread_mutex_t* mutex, const pthread_attr_t* attr) {
+int platform_mutex_init(pthread_mutex_t* mutex, const pthread_mutexattr_t* attr) {
     (void)attr; // 忽略属性参数
 #ifdef _WIN32
     InitializeCriticalSection(mutex);
@@ -104,7 +104,7 @@ int platform_mutex_unlock(pthread_mutex_t* mutex) {
 #endif
 }
 
-int platform_cond_init(pthread_cond_t* cond, const pthread_attr_t* attr) {
+int platform_cond_init(pthread_cond_t* cond, const pthread_condattr_t* attr) {
     (void)attr; // 忽略属性参数
 #ifdef _WIN32
     InitializeConditionVariable(cond);

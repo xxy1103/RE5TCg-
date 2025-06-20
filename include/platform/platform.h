@@ -8,14 +8,19 @@
     #include <windows.h>
     #include <process.h>
     #pragma comment(lib, "ws2_32.lib")
-    
-    // Windows线程类型定义
+      // Windows线程类型定义
     typedef HANDLE pthread_t;
     typedef CRITICAL_SECTION pthread_mutex_t;
     typedef CONDITION_VARIABLE pthread_cond_t;
     typedef struct {
         void* unused;
     } pthread_attr_t;
+    typedef struct {
+        void* unused;
+    } pthread_mutexattr_t;
+    typedef struct {
+        void* unused;
+    } pthread_condattr_t;
     
     #define THREAD_RETURN_TYPE unsigned int __stdcall
     #define THREAD_RETURN_VALUE 0
@@ -59,7 +64,7 @@ int platform_get_last_error();
  * @param attr 属性（可为NULL）
  * @return 成功返回0，失败返回非0
  */
-int platform_mutex_init(pthread_mutex_t* mutex, const pthread_attr_t* attr);
+int platform_mutex_init(pthread_mutex_t* mutex, const pthread_mutexattr_t* attr);
 
 /**
  * @brief 跨平台的互斥锁销毁
@@ -88,7 +93,7 @@ int platform_mutex_unlock(pthread_mutex_t* mutex);
  * @param attr 属性（可为NULL）
  * @return 成功返回0，失败返回非0
  */
-int platform_cond_init(pthread_cond_t* cond, const pthread_attr_t* attr);
+int platform_cond_init(pthread_cond_t* cond, const pthread_condattr_t* attr);
 
 /**
  * @brief 跨平台的条件变量销毁
