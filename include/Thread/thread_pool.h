@@ -7,7 +7,7 @@
 #include <time.h>
 
 // 线程池配置常量
-#define DEFAULT_WORKER_THREADS 4        // 默认工作线程数
+#define DEFAULT_WORKER_THREADS 16        // 默认工作线程数
 #define MAX_WORKER_THREADS 16           // 最大工作线程数
 #define MAX_QUEUE_SIZE 2000             // 任务队列最大容量
 #define QUEUE_TIMEOUT_MS 1000           // 队列操作超时时间（毫秒）

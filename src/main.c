@@ -20,7 +20,7 @@ int main() {
     // 初始化日志文件
     init_log_file();
     // 设置日志记录级别为 DEBUG 以查看更多信息
-    set_log_level(LOG_LEVEL_DEBUG);
+    set_log_level(LOG_LEVEL_INFO);
     
     log_info("正在启动多线程DNS代理服务器...");
     log_info("本版本特性：");
