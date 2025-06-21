@@ -79,7 +79,7 @@ void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in client_add
     log_debug("修改请求ID: %d -> %d", original_id, new_id);
         
     // === 转发请求到随机选择的上游DNS服务器 ===
-    if (sendDnsPacketToRandomUpstream(server_socket, dns_entity) != MYSUCCESS) {
+    if (sendDnsPacketToNextUpstream(server_socket, dns_entity) != MYSUCCESS) {
         log_error("转发请求到上游服务器失败 (新ID=%d)", new_id);
         // 转发失败，清理刚创建的映射
         thread_pool_remove_mapping_safe(new_id);

@@ -15,13 +15,12 @@
 
 // DNS上游服务器IP池相关定义
 #define MAX_UPSTREAM_SERVERS 10    // 最大上游服务器数量
-#define MAX_IP_LENGTH 16          // IP地址字符串最大长度
 
-// DNS上游服务器池结构体
+// 优化后的DNS上游服务器池结构体 - 直接存储sockaddr_in
 typedef struct {
-    char servers[MAX_UPSTREAM_SERVERS][MAX_IP_LENGTH];  // IP地址数组
+    struct sockaddr_in servers[MAX_UPSTREAM_SERVERS];  // 直接存储完整的地址结构
     int server_count;                                   // 当前服务器数量
-    int current_index;                                  // 当前使用的服务器索引
+    int current_index;                                  // 当前使用的服务器索引（用于轮询）
 } upstream_dns_pool_t;
 
 //全局变量声明
@@ -33,10 +32,14 @@ extern upstream_dns_pool_t g_upstream_pool; // 上游DNS服务器池
 // DNS上游服务器池管理函数
 int upstream_pool_init(upstream_dns_pool_t* pool);
 int upstream_pool_add_server(upstream_dns_pool_t* pool, const char* ip_address);
-int upstream_pool_get_random_server(upstream_dns_pool_t* pool, char* ip_address, int max_len);
+struct sockaddr_in* upstream_pool_get_random_server(upstream_dns_pool_t* pool);
+struct sockaddr_in* upstream_pool_get_next_server(upstream_dns_pool_t* pool);  // 新增：轮询获取服务器
 void upstream_pool_destroy(upstream_dns_pool_t* pool);
+int upstream_pool_contains_server(upstream_dns_pool_t* pool, const char* ip_address);
+int upstream_pool_get_server_count(upstream_dns_pool_t* pool);  // 新增：获取服务器数量
+void upstream_pool_print_status(upstream_dns_pool_t* pool);     // 新增：打印池状态
 
 int sendDnsPacket(SOCKET sock,struct sockaddr_in address,const DNS_ENTITY* dns_entity);
 int sendDnsPacketToRandomUpstream(SOCKET sock, const DNS_ENTITY* dns_entity);
-int upstream_pool_contains_server(upstream_dns_pool_t* pool, const char* ip_address);
+int sendDnsPacketToNextUpstream(SOCKET sock, const DNS_ENTITY* dns_entity);  // 新增：轮询发送
 #endif // WEBSOCKET_H

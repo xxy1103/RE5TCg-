@@ -4,6 +4,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+// 最大IP地址长度（IPv6最大长度为45字符，加1为46）
+#define MAX_IP_LENGTH 46
+
 /**
  * @brief 从配置文件加载DNS服务器列表
  * @param pool DNS服务器池指针
