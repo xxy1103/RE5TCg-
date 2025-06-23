@@ -328,32 +328,61 @@ dns_cache_entry_t* dns_cache_get(dns_lru_cache_t* cache, const char* domain) {
 }
 
 /**
+ * @brief 内部函数：查找缓存条目（不检查过期，不移动LRU）
+ * 仅用于内部逻辑，根据域名查找对应的缓存条目
+ */
+static dns_cache_entry_t* dns_cache_find_entry_internal(dns_lru_cache_t* cache, const char* domain) {
+    if (!cache || !domain) return NULL;
+    
+    unsigned int hash_index = hash_domain(domain) % DNS_CACHE_HASH_SIZE;
+    dns_cache_entry_t* current = cache->hash_table[hash_index];
+    
+    while (current) {
+        if (strcasecmp(current->domain, domain) == 0) {
+            return current; // 找到了，直接返回，不检查过期
+        }
+        current = current->hash_next;
+    }
+    
+    return NULL; // 没找到
+}
+
+/**
  * @brief 向缓存添加DNS条目
  */
 int dns_cache_put(dns_lru_cache_t* cache, const char* domain, DNS_ENTITY* response, int ttl) {
     if (!cache || !domain || !response) return MYERROR;
     
-    // 检查是否已存在
-    dns_cache_entry_t* existing = dns_cache_get(cache, domain);
-    if (existing) {
-        // 更新现有条目
-        if (existing->dns_response) {
-            free_dns_entity(existing->dns_response);
-        }
-        existing->dns_response = response; // 直接使用传入的响应
-        existing->expire_time = time(NULL) + (ttl > 0 ? ttl : DEFAULT_TTL);
-        existing->access_time = time(NULL);
+    // 使用内部函数查找，无论是否过期
+    dns_cache_entry_t* entry = dns_cache_find_entry_internal(cache, domain);
+    if (entry) {
+        // --- 路径A：找到了条目（无论是有效的还是过期的），执行原地更新 ---
+        log_debug("复用现有缓存槽位进行更新: %s", domain);
         
-        log_debug("更新缓存条目: %s", domain);
+        // 1. 释放旧的DNS响应数据
+        if (entry->dns_response) {
+            free_dns_entity(entry->dns_response);
+        }
+        // 2. 更新为新的数据和过期时间
+        entry->dns_response = response;
+        entry->expire_time = time(NULL) + (ttl > 0 ? ttl : DEFAULT_TTL);
+        entry->access_time = time(NULL);
+        
+        // 3. 因为被更新，所以它是最新的，移动到LRU头部
+        lru_move_to_head(cache, entry);
+        
+        log_debug("原地更新缓存条目: %s", domain);
         return MYSUCCESS;
-    }
+    }    
+    // --- 路径B：完全没找到条目，这是一个全新的域名，执行插入 ---
+    log_debug("为新域名创建缓存条目: %s", domain);
     
     // 如果缓存已满，移除最旧的一个条目
     if (cache->current_size >= cache->max_size) {
         lru_remove_tail(cache);
     }
       // 查找空闲条目
-    dns_cache_entry_t* entry = NULL;
+    entry = NULL;
     int free_index = free_stack_pop(&cache->free_stack);
     if (free_index >= 0) {
         entry = &cache->entry_pool[free_index];
@@ -380,7 +409,7 @@ int dns_cache_put(dns_lru_cache_t* cache, const char* domain, DNS_ENTITY* respon
     lru_move_to_head(cache, entry);
     cache->current_size++;
     
-    log_debug("添加缓存条目: %s, TTL: %d, 当前大小: %d", domain, ttl, cache->current_size);
+    log_debug("添加新缓存条目: %s, TTL: %d, 当前大小: %d", domain, ttl, cache->current_size);
     return MYSUCCESS;
 }
 
@@ -434,7 +463,7 @@ void dns_cache_destroy(dns_lru_cache_t* cache) {
     if (!cache) return;
     
     // 释放所有DNS响应
-    for (int i = 0; i < cache->max_size; i++) {
+    for (int i = 0; i < cache->max_size; i++) { //ok
         if (cache->entry_pool[i].dns_response) {
             free_dns_entity(cache->entry_pool[i].dns_response);
         }
@@ -450,7 +479,7 @@ void dns_cache_destroy(dns_lru_cache_t* cache) {
     free_stack_destroy(&cache->free_stack);
     
     // 清零哈希表
-    for (int i = 0; i < DNS_CACHE_HASH_SIZE; i++) {
+    for (int i = 0; i < DNS_CACHE_HASH_SIZE; i++) { //ok
         cache->hash_table[i] = NULL;
     }
     
