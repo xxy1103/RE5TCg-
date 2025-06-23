@@ -76,7 +76,7 @@ void upstream_pool_print_status(upstream_dns_pool_t* pool) {
     printf("服务器列表:\n");
     
     for (int i = 0; i < pool->server_count; i++) {
-        printf("  [%d] %s\n", i, pool->servers[i]);
+        printf("  [%d] %s\n", i, inet_ntoa(pool->servers[i].sin_addr));
     }
     
     printf("=========================\n");
