@@ -31,13 +31,24 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 # 查找源文件
 file(GLOB_RECURSE SOURCES "src/*.c")
 
+# 为测试程序创建源文件列表（排除main.c）
+file(GLOB_RECURSE LRU_TEST_SOURCES "src/*.c")
+list(REMOVE_ITEM LRU_TEST_SOURCES "${CMAKE_SOURCE_DIR}/src/main.c")
+
 # 创建可执行文件
 add_executable(${PROJECT_NAME} ${SOURCES})
+
+# 新的LRU缓存测试程序
+add_executable(lru_test lru_cache_test.c ${LRU_TEST_SOURCES})
 
 # 平台特定设置
 if(WIN32)
     # 在Windows上，链接Winsock2库
     target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32)
+    target_link_libraries(lru_test PRIVATE ws2_32)
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE pthread)
+    target_link_libraries(lru_test PRIVATE pthread)
 endif()
 
 # 设置输出目录

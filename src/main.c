@@ -1,50 +1,50 @@
 #include "platform/platform.h"
-// åŒ…å«è‡ªå®šä¹‰çš„ WebSocket å¤´æ–‡ä»¶ï¼Œå®šä¹‰äº†ç›¸å…³å‡½æ•°å’Œç»“æž„ä½“
+// °üº¬×Ô¶¨ÒåµÄ WebSocket Í·ÎÄ¼þ£¬¶¨ÒåÁËÏà¹Øº¯ÊýºÍ½á¹¹Ìå
 #include "websocket/websocket.h" 
-// åŒ…å«è‡ªå®šä¹‰çš„æ•°æ®æŠ¥å¤´æ–‡ä»¶ï¼Œå®šä¹‰äº† DNS æŠ¥æ–‡ç›¸å…³ç»“æž„ä½“å’Œå‡½æ•°
+// °üº¬×Ô¶¨ÒåµÄÊý¾Ý±¨Í·ÎÄ¼þ£¬¶¨ÒåÁË DNS ±¨ÎÄÏà¹Ø½á¹¹ÌåºÍº¯Êý
 #include "websocket/datagram.h" 
-#include "websocket/dnsServer.h" // åŒ…å« DNS æœåŠ¡å™¨ç›¸å…³å‡½æ•°å£°æ˜Ž
+#include "websocket/dnsServer.h" // °üº¬ DNS ·þÎñÆ÷Ïà¹Øº¯ÊýÉùÃ÷
 
-#include <stdio.h>    // åŒ…å«æ ‡å‡†è¾“å…¥è¾“å‡ºå¤´æ–‡ä»¶
-#include <time.h>     // åŒ…å«æ—¶é—´ç›¸å…³çš„å¤´æ–‡ä»¶ï¼Œç”¨äºŽç”Ÿæˆéšæœºæ•°ç§å­
-#include <string.h>   // åŒ…å«å­—ç¬¦ä¸²å¤„ç†å‡½æ•°
-#include <stdlib.h>   // åŒ…å«å†…å­˜åˆ†é…å‡½æ•°
-#include "debug/debug.h"   // åŒ…å«è°ƒè¯•ç›¸å…³çš„å¤´æ–‡ä»¶
+#include <stdio.h>    // °üº¬±ê×¼ÊäÈëÊä³öÍ·ÎÄ¼þ
+#include <time.h>     // °üº¬Ê±¼äÏà¹ØµÄÍ·ÎÄ¼þ£¬ÓÃÓÚÉú³ÉËæ»úÊýÖÖ×Ó
+#include <string.h>   // °üº¬×Ö·û´®´¦Àíº¯Êý
+#include <stdlib.h>   // °üº¬ÄÚ´æ·ÖÅäº¯Êý
+#include "debug/debug.h"   // °üº¬µ÷ÊÔÏà¹ØµÄÍ·ÎÄ¼þ
 
 /**
- * @brief ç¨‹åºä¸»å…¥å£ç‚¹ã€‚
+ * @brief ³ÌÐòÖ÷Èë¿Úµã¡£
  * 
- * @return int æˆåŠŸè¿”å›ž 0ï¼Œå¤±è´¥è¿”å›ž 1ã€‚
+ * @return int ³É¹¦·µ»Ø 0£¬Ê§°Ü·µ»Ø 1¡£
  */
 int main() {    
-    // åˆå§‹åŒ–æ—¥å¿—æ–‡ä»¶
+    // ³õÊ¼»¯ÈÕÖ¾ÎÄ¼þ
     init_log_file();
-    // è®¾ç½®æ—¥å¿—è®°å½•çº§åˆ«ä¸º DEBUG ä»¥æŸ¥çœ‹æ›´å¤šä¿¡æ¯
+    // ÉèÖÃÈÕÖ¾¼ÇÂ¼¼¶±ðÎª DEBUG ÒÔ²é¿´¸ü¶àÐÅÏ¢
     set_log_level(LOG_LEVEL_INFO);
     
-    log_info("æ­£åœ¨å¯åŠ¨å¤šçº¿ç¨‹DNSä»£ç†æœåŠ¡å™¨...");
-    log_info("æœ¬ç‰ˆæœ¬ç‰¹æ€§ï¼š");
-    log_info("  - å¤šçº¿ç¨‹å¹¶è¡Œå¤„ç†");
-    log_info("  - I/Oä¸Žè®¡ç®—åˆ†ç¦»");
-    log_info("  - çº¿ç¨‹å®‰å…¨çš„IDæ˜ å°„");
-    log_info("  - é«˜å¹¶å‘æ€§èƒ½");
+    log_info("ÕýÔÚÆô¶¯¶àÏß³ÌDNS´úÀí·þÎñÆ÷...");
+    log_info("±¾°æ±¾ÌØÐÔ£º");
+    log_info("  - ¶àÏß³Ì²¢ÐÐ´¦Àí");
+    log_info("  - I/OÓë¼ÆËã·ÖÀë");
+    log_info("  - Ïß³Ì°²È«µÄIDÓ³Éä");
+    log_info("  - ¸ß²¢·¢ÐÔÄÜ");
 
-    // åˆå§‹åŒ–å¹³å°èµ„æº
+    // ³õÊ¼»¯Æ½Ì¨×ÊÔ´
     platform_init();
 
-    // å¯åŠ¨å¤šçº¿ç¨‹DNSä»£ç†æœåŠ¡å™¨
+    // Æô¶¯¶àÏß³ÌDNS´úÀí·þÎñÆ÷
     if (start_dns_proxy_server_threaded() != MYSUCCESS) {
-        log_error("å¤šçº¿ç¨‹DNSä»£ç†æœåŠ¡å™¨å¯åŠ¨å¤±è´¥");
-        platform_cleanup(); // æ¸…ç†å·²åˆå§‹åŒ–çš„èµ„æº
-        return 1; // å¯åŠ¨å¤±è´¥ï¼Œç¨‹åºé€€å‡º
+        log_error("¶àÏß³ÌDNS´úÀí·þÎñÆ÷Æô¶¯Ê§°Ü");
+        platform_cleanup(); // ÇåÀíÒÑ³õÊ¼»¯µÄ×ÊÔ´
+        return 1; // Æô¶¯Ê§°Ü£¬³ÌÐòÍË³ö
     }
     
-    // æ¸…ç†å¹³å°èµ„æº
+    // ÇåÀíÆ½Ì¨×ÊÔ´
     platform_cleanup();
     
-    // æ¸…ç†æ—¥å¿—æ–‡ä»¶
+    // ÇåÀíÈÕÖ¾ÎÄ¼þ
     cleanup_log_file();
     
-    log_info("å¤šçº¿ç¨‹DNSä»£ç†æœåŠ¡å™¨å·²æ­£å¸¸é€€å‡º");
-    return 0; // ç¨‹åºæ­£å¸¸ç»“æŸ
+    log_info("¶àÏß³ÌDNS´úÀí·þÎñÆ÷ÒÑÕý³£ÍË³ö");
+    return 0; // ³ÌÐòÕý³£½áÊø
 }
