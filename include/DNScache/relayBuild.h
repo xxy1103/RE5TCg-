@@ -3,6 +3,7 @@
 
 #include "websocket/datagram.h"
 #include "debug/debug.h"
+#include "DNScache/free_stack.h"
 #include <time.h>
 #include <string.h>
 
@@ -58,6 +59,7 @@ typedef struct {
     dns_cache_entry_t* lru_head;        // LRU链表头（最新）
     dns_cache_entry_t* lru_tail;        // LRU链表尾（最旧）
     dns_cache_entry_t* entry_pool;      // 预分配的条目池
+    free_stack_t free_stack;            // 空闲条目栈
     int current_size;                   // 当前缓存大小
     int max_size;                       // 最大缓存大小
     

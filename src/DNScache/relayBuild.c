@@ -1,4 +1,5 @@
 #include "DNScache/relayBuild.h"
+#include "DNScache/free_stack.h"
 #include "websocket/websocket.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -46,7 +47,7 @@ int domain_table_init(domain_table_t* table) {
     if (!table) return MYERROR;
     
     // 清零哈希表
-    for (int i = 0; i < DOMAIN_TABLE_HASH_SIZE; i++) {
+    for (int i = 0; i < DOMAIN_TABLE_HASH_SIZE; i++) { //ok
         table->hash_table[i] = NULL;
     }
     
@@ -146,7 +147,7 @@ domain_entry_t* domain_table_lookup(domain_table_t* table, const char* domain) {
 void domain_table_destroy(domain_table_t* table) {
     if (!table) return;
     
-    for (int i = 0; i < DOMAIN_TABLE_HASH_SIZE; i++) {
+    for (int i = 0; i < DOMAIN_TABLE_HASH_SIZE; i++) { //ok 
         domain_entry_t* current = table->hash_table[i];
         while (current) {
             domain_entry_t* next = current->next;
@@ -171,7 +172,7 @@ int dns_cache_init(dns_lru_cache_t* cache, int max_size) {
     if (!cache || max_size <= 0) return MYERROR;
     
     // 清零哈希表
-    for (int i = 0; i < DNS_CACHE_HASH_SIZE; i++) {
+    for (int i = 0; i < DNS_CACHE_HASH_SIZE; i++) { //ok
         cache->hash_table[i] = NULL;
     }
     
@@ -179,6 +180,13 @@ int dns_cache_init(dns_lru_cache_t* cache, int max_size) {
     cache->entry_pool = (dns_cache_entry_t*)calloc(max_size, sizeof(dns_cache_entry_t));
     if (!cache->entry_pool) {
         log_error("DNS缓存条目池内存分配失败");
+        return MYERROR;
+    }
+    
+    // 初始化空闲栈
+    if (free_stack_init(&cache->free_stack, max_size) != 0) {
+        log_error("空闲栈初始化失败");
+        free(cache->entry_pool);
         return MYERROR;
     }
     
@@ -269,9 +277,14 @@ void lru_remove_tail(dns_lru_cache_t* cache) {
         free_dns_entity(tail->dns_response);
         tail->dns_response = NULL;
     }
-    
-    // 清零条目（条目池中的内存不需要释放）
+      // 清零条目（条目池中的内存不需要释放）
     memset(tail, 0, sizeof(dns_cache_entry_t));
+    
+    // 将索引推回空闲栈
+    int index = tail - cache->entry_pool;
+    if (free_stack_push(&cache->free_stack, index) != 0) {
+        log_error("将条目索引推回空闲栈失败: %d", index);
+    }
     
     cache->current_size--;
     cache->cache_evictions++;
@@ -335,22 +348,19 @@ int dns_cache_put(dns_lru_cache_t* cache, const char* domain, DNS_ENTITY* respon
         return MYSUCCESS;
     }
     
-    // 如果缓存已满，移除最旧的条目
+    // 如果缓存已满，移除最旧的一个条目
     if (cache->current_size >= cache->max_size) {
         lru_remove_tail(cache);
     }
-    
-    // 查找空闲条目
+      // 查找空闲条目
     dns_cache_entry_t* entry = NULL;
-    for (int i = 0; i < cache->max_size; i++) {
-        if (cache->entry_pool[i].domain[0] == '\0') {
-            entry = &cache->entry_pool[i];
-            break;
-        }
+    int free_index = free_stack_pop(&cache->free_stack);
+    if (free_index >= 0) {
+        entry = &cache->entry_pool[free_index];
     }
     
     if (!entry) {
-        log_error("无法找到空闲缓存条目");
+        log_error("无法从空闲栈获取缓存条目");
         return MYERROR;
     }
     
@@ -435,6 +445,9 @@ void dns_cache_destroy(dns_lru_cache_t* cache) {
         free(cache->entry_pool);
         cache->entry_pool = NULL;
     }
+    
+    // 销毁空闲栈
+    free_stack_destroy(&cache->free_stack);
     
     // 清零哈希表
     for (int i = 0; i < DNS_CACHE_HASH_SIZE; i++) {
