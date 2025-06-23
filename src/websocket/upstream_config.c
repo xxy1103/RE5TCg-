@@ -66,14 +66,14 @@ int upstream_pool_load_from_file(upstream_dns_pool_t* pool, const char* config_f
  */
 void upstream_pool_print_status(upstream_dns_pool_t* pool) {
     if (!pool) {
-        printf("DNS服务器池: 未初始化\n");
+        printf("DNS Server Pool: Not initialized\n");
         return;
     }
     
-    printf("=== DNS上游服务器池状态 ===\n");
-    printf("服务器数量: %d/%d\n", pool->server_count, MAX_UPSTREAM_SERVERS);
-    printf("当前索引: %d\n", pool->current_index);
-    printf("服务器列表:\n");
+    printf("=== DNS Upstream Server Pool Status ===\n");
+    printf("Server Count: %d/%d\n", pool->server_count, MAX_UPSTREAM_SERVERS);
+    printf("Current Index: %d\n", pool->current_index);
+    printf("Server List:\n");
     
     for (int i = 0; i < pool->server_count; i++) {
         printf("  [%d] %s\n", i, pool->servers[i]);

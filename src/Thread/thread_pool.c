@@ -514,27 +514,27 @@ void thread_pool_print_status(dns_thread_pool_t* pool) {
     time_t now = time(NULL);
     double uptime = difftime(now, stats.start_time);
 
-    printf("\n=== DNS线程池状态 ===\n");
-    printf("状态: %s\n", pool->is_running ? "运行中" : "已停止");
-    printf("工作线程数: %d\n", pool->worker_count);
-    printf("队列大小: %d/%d\n", task_queue_size(&pool->task_queue), pool->task_queue.capacity);
-    printf("运行时间: %.0f 秒\n", uptime);
-    printf("\n--- 处理统计 ---\n");
-    printf("总入队任务: %lu\n", stats.total_tasks_queued);
-    printf("总处理任务: %lu\n", stats.total_tasks_processed);
-    printf("总丢弃任务: %lu\n", stats.total_tasks_dropped);
-    printf("客户端请求: %lu\n", stats.client_requests);
-    printf("上游响应: %lu\n", stats.upstream_responses);
+    printf("\n=== DNS Thread Pool Status ===\n");
+    printf("Status: %s\n", pool->is_running ? "Running" : "Stopped");
+    printf("Worker Threads: %d\n", pool->worker_count);
+    printf("Queue Size: %d/%d\n", task_queue_size(&pool->task_queue), pool->task_queue.capacity);
+    printf("Uptime: %.0f seconds\n", uptime);
+    printf("\n--- Processing Statistics ---\n");
+    printf("Total Queued Tasks: %lu\n", stats.total_tasks_queued);
+    printf("Total Processed Tasks: %lu\n", stats.total_tasks_processed);
+    printf("Total Dropped Tasks: %lu\n", stats.total_tasks_dropped);
+    printf("Client Requests: %lu\n", stats.client_requests);
+    printf("Upstream Responses: %lu\n", stats.upstream_responses);
     
     if (uptime > 0) {
-        printf("处理速率: %.2f 任务/秒\n", stats.total_tasks_processed / uptime);
+        printf("Processing Rate: %.2f tasks/sec\n", stats.total_tasks_processed / uptime);
     }
 
-    printf("\n--- 工作线程状态 ---\n");
+    printf("\n--- Worker Thread Status ---\n");
     for (int i = 0; i < pool->worker_count; i++) {
         worker_thread_t* worker = &pool->workers[i];
-        printf("线程%d: %s, 已处理: %lu\n", 
-               i, worker->is_active ? "活跃" : "空闲", worker->processed_tasks);
+        printf("Thread %d: %s, Processed: %lu\n", 
+               i, worker->is_active ? "Active" : "Idle", worker->processed_tasks);
     }
     printf("===================\n\n");
 }
