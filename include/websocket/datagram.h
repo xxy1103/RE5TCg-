@@ -53,11 +53,11 @@ void format_domain_name(char* dns, const char* host);
 // 函数：将DNS_ENTITY序列化为DNS协议格式的字节流
 int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity);
 
+// 函数：构造一个DNS响应实体
+DNS_ENTITY* build_response(const DNS_ENTITY* request, const char* ip_address);
+
 // 函数：从DNS协议格式的字节流解析为DNS_ENTITY
 DNS_ENTITY* parse_dns_packet(const char* buffer, int buffer_len);
-
-// 函数：创建一个DNS查询实体
-DNS_ENTITY* create_dns_query(const char* hostname, unsigned short qtype);
 
 // 函数：释放DNS_ENTITY及其相关资源
 void free_dns_entity(DNS_ENTITY* entity);
@@ -68,4 +68,8 @@ char* dns_entity_to_string(const DNS_ENTITY* entity);
 // 函数：从缓冲区中读取域名（处理DNS压缩）
 int read_name_from_buffer(const char* buffer, int buffer_len, int* offset, char* name, int max_name_len);
 
+// 函数：构造一个表示服务器错误的DNS响应实体
+DNS_ENTITY* build_error_response(const DNS_ENTITY* request);
+
+DNS_ENTITY* build_response(const DNS_ENTITY* request, const char* ip_address);
 #endif // DATAGRAM_H

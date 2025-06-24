@@ -81,7 +81,7 @@ extern upstream_dns_pool_t g_upstream_pool;
  */
 int main(int argc, char* argv[]) {
     // === 参数解析变量 ===
-    LogLevel debug_level = LOG_LEVEL_INFO;  // 默认日志级别为info
+    LogLevel debug_level = LOG_LEVEL_DEBUG;  // 默认日志级别为info
     const char* dns_server_ip_conf = "upstream_dns.conf";  // 默认DNS服务器配置文件
     const char* config_file = "dnsrelay.txt";    // 默认配置文件
     

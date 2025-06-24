@@ -1,6 +1,7 @@
 #include "websocket/dnsServer.h"
 #include "platform/platform.h"
 #include "Thread/thread_pool.h"
+#include "DNScache/relayBuild.h"
 #include <time.h>  // 添加时间相关的头文件支持
 #include <string.h> // 包含 memset 和 strcmp
 
@@ -48,46 +49,71 @@ void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in client_add
             inet_ntoa(client_addr.sin_addr), 
             ntohs(client_addr.sin_port), request_len);
 
-
-    log_debug("%s",dns_entity_to_string(dns_entity));
-    log_debug("原始ID: %d",dns_entity->id);
-        
-
-    // === 提取并验证原始Transaction ID ===
-    // DNS头部的前2个字节是Transaction ID（网络字节序）
-    unsigned short original_id = dns_entity->id;
-    unsigned short new_id;
-        
-        
-    // === 创建ID映射关系 ===
-    /*
-    * 为什么需要ID映射？
-    * 1. 多个客户端可能使用相同的Transaction ID
-    * 2. 我们需要确保每个上游请求都有唯一的ID
-    * 3. 响应返回时要恢复原始ID给对应客户端
-    */      
-   if (thread_pool_add_mapping_safe(original_id, &client_addr, client_addr_len, &new_id) != MYSUCCESS) {
-        log_error("为来自 %s:%d 的请求添加映射失败 (原始ID=%d)",
-                    inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), original_id);
-        client_addr_len = sizeof(client_addr);  // 重置地址长度
-        return;
-    }    
-    // === 修改请求的Transaction ID ===
-    // 将客户端的原始ID替换为我们分配的新ID
-    dns_entity->id = new_id;
-    log_debug("修改请求ID: %d -> %d", original_id, new_id);
-        
-    // === 转发请求到随机选择的上游DNS服务器 ===
-    if (sendDnsPacketToNextUpstream(server_socket, dns_entity) != MYSUCCESS) {
-        log_error("转发请求到上游服务器失败 (新ID=%d)", new_id);
-        // 转发失败，清理刚创建的映射
-        thread_pool_remove_mapping_safe(new_id);
-    } else {
-        log_debug("成功转发请求到随机上游服务器，上游ID=%d", new_id);
+    // 查询本地表
+    dns_query_response_t* response = dns_relay_query(dns_entity->questions->qname,dns_entity->questions->qtype);
+    DNS_ENTITY* result;
+    switch (response->result_type){
+        case QUERY_RESULT_BLOCKED:
+            log_debug("响应来源: 域名被屏蔽 - 返回0.0.0.0");
+            result = build_response(dns_entity,"0.0.0.0");
+            break;
+        case QUERY_RESULT_LOCAL_HIT:
+            log_debug("响应来源: 本地域名表命中 - IP: %s", response->resolved_ip);
+            result = build_response(dns_entity,response->resolved_ip);
+            break;
+        case QUERY_RESULT_CACHE_HIT:
+            log_debug("响应来源: 缓存命中 - 直接返回缓存结果");
+            result = response->dns_response;
+            break;
+        case QUERY_RESULT_CACHE_MISS:
+            log_debug("响应来源: 缓存未命中 - 需要向上游DNS服务器查询");
+            log_debug("%s",dns_entity_to_string(dns_entity));
+            log_debug("原始ID: %d",dns_entity->id);
+            // === 提取并验证原始Transaction ID ===
+            // DNS头部的前2个字节是Transaction ID（网络字节序）
+            unsigned short original_id = dns_entity->id;
+            unsigned short new_id;
+                
+            // === 创建ID映射关系 ===      
+            if (thread_pool_add_mapping_safe(original_id, &client_addr, client_addr_len, &new_id) != MYSUCCESS) {
+                log_error("为来自 %s:%d 的请求添加映射失败 (原始ID=%d)",
+                            inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), original_id);
+                client_addr_len = sizeof(client_addr);  // 重置地址长度
+                return;
+            }    
+            // === 修改请求的Transaction ID ===
+            dns_entity->id = new_id;
+            log_debug("修改请求ID: %d -> %d", original_id, new_id);
+            
+            // === 转轮询请求到随机选择的上游DNS服务器 ===
+            if (sendDnsPacketToNextUpstream(server_socket, dns_entity) != MYSUCCESS) {
+                log_error("转发请求到上游服务器失败 (新ID=%d)", new_id);
+                // 转发失败，清理刚创建的映射
+                thread_pool_remove_mapping_safe(new_id);
+            } else {
+                log_debug("成功转发请求到随机上游服务器，上游ID=%d", new_id);
+            }
+            break;
     }
-        
-    // === 重置地址长度供下次使用 ===
-    client_addr_len = sizeof(client_addr);
+
+    if(response->result_type !=QUERY_RESULT_CACHE_MISS)
+    {
+        result->id = dns_entity->id;
+        if (sendDnsPacket(server_socket, client_addr, result) == MYERROR) 
+        {
+            int send_error = platform_get_last_error();
+            log_error("向客户端 %s:%d 发送响应失败: %d",
+            inet_ntoa(client_addr.sin_addr), 
+            ntohs(client_addr.sin_port), send_error);
+        } 
+        else 
+        {
+            log_info("已向客户端 %s:%d 发送响应 (原始ID=%d)",
+            inet_ntoa(client_addr.sin_addr), 
+            ntohs(client_addr.sin_port), dns_entity->id);
+        }
+    }
+
 }
 
 /**
@@ -115,29 +141,17 @@ void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_
     (void)source_len;  // 标记参数已使用，避免编译警告=== 提取响应Transaction ID ===
     // 这是我们之前分配给上游请求的新ID
     unsigned short response_id = dns_entity->id;
+    log_debug("响应来源: 上游DNS服务器 - 处理响应ID: %d", response_id);
     log_debug("正在处理上游ID为 %d 的响应", response_id);
     log_debug("%s",dns_entity_to_string(dns_entity));
-    // === 查找对应的映射关系 ===
-    /*
-     * 根据响应ID查找原始客户端信息。
-     * 如果找不到映射，可能的原因：
-     * 1. 响应ID错误或损坏
-     * 2. 映射已过期被清理
-     * 3. 收到重复响应
-     * 4. 恶意或错误的响应
-     */    
     dns_mapping_entry_t* mapping = thread_pool_find_mapping_safe(response_id);
     if (!mapping) {
         log_warn("未找到响应ID %d 对应的映射，丢弃响应", response_id);
         source_len = sizeof(source_addr);  // 重置地址长度
         return ;
-    }
-        
+    }    
     // === 恢复原始Transaction ID ===
-    /*
-     * 将响应中的ID改回客户端原始的Transaction ID，
-     * 这样客户端就能正确识别和处理响应。
-     */    unsigned short original_id = mapping->original_id;
+     unsigned short original_id = mapping->original_id;
     dns_entity->id = original_id;
     
     log_debug("恢复响应ID: %d -> %d，目标客户端 %s:%d", 
@@ -145,27 +159,30 @@ void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_
              inet_ntoa(mapping->client_addr.sin_addr), 
              ntohs(mapping->client_addr.sin_port));
     
-
-if (sendDnsPacket(server_socket, mapping->client_addr, dns_entity) == MYERROR) {
+    if (sendDnsPacket(server_socket, mapping->client_addr, dns_entity) == MYERROR) 
+    {
         int send_error = platform_get_last_error();
         log_error("向客户端 %s:%d 发送响应失败: %d",
-                 inet_ntoa(mapping->client_addr.sin_addr), 
-                 ntohs(mapping->client_addr.sin_port), send_error);
-    } else {
+        inet_ntoa(mapping->client_addr.sin_addr), 
+        ntohs(mapping->client_addr.sin_port), send_error);
+    } 
+    else 
+    {
         log_info("已向客户端 %s:%d 发送响应 (%d 字节，原始ID=%d)",
-                inet_ntoa(mapping->client_addr.sin_addr), 
-                ntohs(mapping->client_addr.sin_port), response_len, original_id);
+        inet_ntoa(mapping->client_addr.sin_addr), 
+        ntohs(mapping->client_addr.sin_port), response_len, original_id);
     }
         
     // === 清理完成的映射关系 ===
-    /*
-     * DNS请求-响应周期完成，清理映射以释放资源。
-     * 这是关键步骤，防止映射表泄漏。
-     */
     thread_pool_remove_mapping_safe(response_id);
-        
-    // === 重置地址长度供下次使用 ===
-    source_len = sizeof(source_addr);
+    
+    // === 将查询结果插入缓存 ===
+    if (dns_relay_cache_response(dns_entity->questions->qname, dns_entity) != MYSUCCESS) {
+        log_warn("将响应缓存失败: %s", dns_entity->questions->qname);
+    } else {
+        log_debug("已将响应缓存: %s", dns_entity->questions->qname);
+    }
+
 
 }
 

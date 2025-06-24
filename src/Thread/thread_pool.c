@@ -279,9 +279,6 @@ THREAD_RETURN_TYPE worker_thread_main(void* arg) {
             handle_upstream_responses(dns_entity, task.source_addr, task.source_addr_len, task.buffer_len);
             increment_stats_counter(pool, "upstream_response");
         }
-
-        // 释放DNS实体
-        free_dns_entity(dns_entity);
         
         // 更新统计信息
         worker->processed_tasks++;

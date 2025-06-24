@@ -15,6 +15,7 @@
 #define MAX_DOMAIN_LENGTH 256
 #define MAX_IP_LENGTH 16
 #define DOMAIN_TABLE_HASH_SIZE 4096
+#define DOMAIN_TABLE_NUM_SEGMENTS 64    // 域名表分段数量，必须是2的幂
 
 // 本地域名表条目
 typedef struct domain_entry {
@@ -24,11 +25,18 @@ typedef struct domain_entry {
     struct domain_entry* next;          // 哈希冲突链表
 } domain_entry_t;
 
-// 本地域名表
+// 域名表分段结构
 typedef struct {
-    domain_entry_t* hash_table[DOMAIN_TABLE_HASH_SIZE];
-    int entry_count;
-    time_t last_load_time;
+    pthread_rwlock_t rwlock;            // 保护该段的读写锁
+    domain_entry_t* hash_buckets[DOMAIN_TABLE_HASH_SIZE / DOMAIN_TABLE_NUM_SEGMENTS]; // 该段的哈希桶
+    int entry_count;                    // 该段的条目数量
+} domain_table_segment_t;
+
+// 本地域名表（分段版本）
+typedef struct {
+    domain_table_segment_t segments[DOMAIN_TABLE_NUM_SEGMENTS]; // 分段数组
+    int total_entry_count;              // 总条目数量
+    time_t last_load_time;              // 最后加载时间
 } domain_table_t;
 
 // ============================================================================
@@ -97,8 +105,8 @@ typedef enum {
 // 查询结果结构
 typedef struct {
     dns_query_result_t result_type;
-    DNS_ENTITY* dns_response;           // DNS响应（如果有）
-    char resolved_ip[MAX_IP_LENGTH];    // 解析的IP地址
+    DNS_ENTITY* dns_response;           // cache缓存找到返回DNS响应
+    char resolved_ip[MAX_IP_LENGTH];    // 本地表查找时返回ip
 } dns_query_response_t;
 
 // ============================================================================
@@ -106,29 +114,32 @@ typedef struct {
 // ============================================================================
 
 // 本地域名表管理
-int domain_table_init(domain_table_t* table);
-int domain_table_load_from_file(domain_table_t* table, const char* filename);
-domain_entry_t* domain_table_lookup(domain_table_t* table, const char* domain);
-void domain_table_destroy(domain_table_t* table);
+int domain_table_init();
+int domain_table_load_from_file(const char* filename);
+domain_entry_t* domain_table_lookup(const char* domain);
+void domain_table_destroy();
 
 // LRU缓存管理
-int dns_cache_init(dns_lru_cache_t* cache, int max_size);
-dns_cache_entry_t* dns_cache_get(dns_lru_cache_t* cache, const char* domain);
-int dns_cache_put(dns_lru_cache_t* cache, const char* domain, DNS_ENTITY* response, int ttl);
-void dns_cache_cleanup_expired(dns_lru_cache_t* cache);
-void dns_cache_print_stats(dns_lru_cache_t* cache);
-void dns_cache_destroy(dns_lru_cache_t* cache);
+int dns_cache_init(int max_size);
+dns_cache_entry_t* dns_cache_get(const char* domain);
+int dns_cache_put(const char* domain, DNS_ENTITY* response, int ttl);
+void dns_cache_cleanup_expired();
+void dns_cache_print_stats();
+void dns_cache_destroy();
 
 // 统一查询接口
 dns_query_response_t* dns_relay_query(const char* domain, unsigned short qtype);
 int dns_relay_init(const char* domain_file);
 void dns_relay_cleanup(void);
+int dns_relay_cache_response(const char* domain, DNS_ENTITY* response);
+void dns_relay_get_stats(int* domain_count, int* cache_size, unsigned long* cache_hits, unsigned long* cache_misses);
 
 // 内部辅助函数声明
 unsigned int hash_domain(const char* domain);
-dns_cache_segment_t* get_cache_segment(dns_lru_cache_t* cache, const char* domain);
+dns_cache_segment_t* get_cache_segment(const char* domain);
+domain_table_segment_t* get_domain_table_segment(const char* domain);
 void lru_move_to_head_segment(dns_cache_segment_t* segment, dns_cache_entry_t* entry);
-dns_cache_entry_t* lru_remove_tail_segment(dns_lru_cache_t* cache, dns_cache_segment_t* segment);
+dns_cache_entry_t* lru_remove_tail_segment(dns_cache_segment_t* segment);
 
 #endif // RELAYBUILD_H
 

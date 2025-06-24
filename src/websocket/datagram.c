@@ -24,42 +24,69 @@ void format_domain_name(char* dns, const char* host) {
     *dns++ = '\0'; // 以一个长度为0的字节结束，表示根域
 }
 
-// 函数：创建一个DNS查询实体
-//只在测试中使用，DNS服务器中没有使用
-DNS_ENTITY* create_dns_query(const char* hostname, unsigned short qtype) {
-    DNS_ENTITY* entity = (DNS_ENTITY*)malloc(sizeof(DNS_ENTITY));
-    if (!entity) return NULL;
-    
-    // 初始化DNS头部
-    entity->id = (unsigned short)(rand() % 65536);
-    entity->flags = 0x0100; // 标准查询，递归请求
-    entity->qdcount = 1;
-    entity->ancount = 0;
-    entity->nscount = 0;
-    entity->arcount = 0;
-    
-    // 创建问题部分
-    entity->questions = (DNS_QUESTION_ENTITY*)malloc(sizeof(DNS_QUESTION_ENTITY));
-    if (!entity->questions) {
-        free(entity);
+
+
+// 函数：构造一个DNS响应实体
+DNS_ENTITY* build_response(const DNS_ENTITY* request, const char* ip_address) {
+    DNS_ENTITY* response = (DNS_ENTITY*)malloc(sizeof(DNS_ENTITY));
+    if (!response) {
         return NULL;
     }
-    
-    // 格式化域名
-    entity->questions[0].qname = (char*)malloc(256);
-    if (!entity->questions[0].qname) {
-        free(entity->questions);
-        free(entity);
-        return NULL;
+    memset(response, 0, sizeof(DNS_ENTITY));
+
+    response->id = request->id;
+    response->qdcount = request->qdcount;
+
+    // 复制问题部分
+    if (response->qdcount > 0) {
+        response->questions = (DNS_QUESTION_ENTITY*)malloc(sizeof(DNS_QUESTION_ENTITY) * response->qdcount);
+        if (!response->questions) {
+            free(response);
+            return NULL;
+        }
+        for (int i = 0; i < response->qdcount; i++) {
+            response->questions[i].qname = strdup(request->questions[i].qname);
+            response->questions[i].qtype = request->questions[i].qtype;
+            response->questions[i].qclass = request->questions[i].qclass;
+        }
     }
-    format_domain_name(entity->questions[0].qname, hostname);
-    entity->questions[0].qtype = qtype;    entity->questions[0].qclass = 1; // IN class
-    
-    entity->answers = NULL;
-    entity->authorities = NULL;
-    entity->additionals = NULL;
-    
-    return entity;
+
+    // 检查IP地址是否为 "0.0.0.0"
+    if (strcmp(ip_address, "0.0.0.0") == 0) {
+        // 域名不存在
+        response->flags = 0x8183; // QR=1, Opcode=0, AA=0, TC=0, RD=1, RA=1, Z=0, RCODE=3 (Name Error)
+        response->ancount = 0;
+        response->answers = NULL;
+    } else {
+        // 构造成功响应
+        response->flags = 0x8180; // QR=1, Opcode=0, AA=0, TC=0, RD=1, RA=1, Z=0, RCODE=0 (No Error)
+        response->ancount = request->qdcount; // 假设每个问题都有一个答案
+        if (response->ancount > 0) {
+            response->answers = (R_DATA_ENTITY*)malloc(sizeof(R_DATA_ENTITY) * response->ancount);
+            if (!response->answers) {
+                free_dns_entity(response); // free_dns_entity 会处理已经分配的 questions
+                return NULL;
+            }
+            for (int i = 0; i < response->ancount; i++) {
+                response->answers[i].name = strdup(request->questions[i].qname);
+                response->answers[i].type = A; // IPv4 地址
+                response->answers[i]._class = 1; // IN
+                response->answers[i].ttl = 3600; // 1 小时
+                response->answers[i].data_len = 4;
+                response->answers[i].rdata = (char*)malloc(4);
+                if (response->answers[i].rdata) {
+                    inet_pton(AF_INET, ip_address, response->answers[i].rdata);
+                }
+            }
+        }
+    }
+
+    response->nscount = 0;
+    response->arcount = 0;
+    response->authorities = NULL;
+    response->additionals = NULL;
+
+    return response;
 }
 
 // 函数：将DNS_ENTITY序列化为DNS协议格式的字节流
@@ -939,4 +966,42 @@ int get_dns_name_length(const char* dns_name) {
     }
     
     return length;
+}
+
+// 函数：构造一个表示服务器错误的DNS响应实体
+DNS_ENTITY* build_error_response(const DNS_ENTITY* request) {
+    DNS_ENTITY* response = (DNS_ENTITY*)malloc(sizeof(DNS_ENTITY));
+    if (!response) {
+        return NULL;
+    }
+    memset(response, 0, sizeof(DNS_ENTITY));
+
+    response->id = request->id;
+    response->qdcount = request->qdcount;
+
+    // 复制问题部分
+    if (response->qdcount > 0) {
+        response->questions = (DNS_QUESTION_ENTITY*)malloc(sizeof(DNS_QUESTION_ENTITY) * response->qdcount);
+        if (!response->questions) {
+            free(response);
+            return NULL;
+        }
+        for (int i = 0; i < response->qdcount; i++) {
+            response->questions[i].qname = strdup(request->questions[i].qname);
+            response->questions[i].qtype = request->questions[i].qtype;
+            response->questions[i].qclass = request->questions[i].qclass;
+        }
+    }
+
+    // 设置标志为服务器错误 (Server Failure, RCODE=2)
+    response->flags = 0x8182;
+
+    response->ancount = 0;
+    response->answers = NULL;
+    response->nscount = 0;
+    response->authorities = NULL;
+    response->arcount = 0;
+    response->additionals = NULL;
+
+    return response;
 }

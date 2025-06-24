@@ -11,6 +11,7 @@
         "stdlib.h": "c",
         "dnsserver.h": "c",
         "platform.h": "c",
-        "upstream_config.h": "c"
+        "upstream_config.h": "c",
+        "functional": "c"
     }
 }

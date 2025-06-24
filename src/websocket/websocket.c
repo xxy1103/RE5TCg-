@@ -222,6 +222,9 @@ void upstream_pool_destroy(upstream_dns_pool_t* pool) {
 
 int sendDnsPacket(SOCKET sock,struct sockaddr_in address,const DNS_ENTITY* dns_entity)
 {
+
+    //发送数据包：
+    log_debug("%s",dns_entity_to_string(dns_entity));
     char buf[BUF_SIZE];      // 用于发送数据的缓冲区    
     // 将DNS_ENTITY序列化为字节流
     int packet_len = serialize_dns_packet(buf, dns_entity);
