@@ -49,6 +49,7 @@ void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in client_add
             inet_ntoa(client_addr.sin_addr), 
             ntohs(client_addr.sin_port), request_len);
 
+    log_debug("%s",dns_entity_to_string(dns_entity));
     // 查询本地表
     dns_query_response_t* response = dns_relay_query(dns_entity->questions->qname,dns_entity->questions->qtype);
     DNS_ENTITY* result;
@@ -177,7 +178,7 @@ void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_
     thread_pool_remove_mapping_safe(response_id);
     
     // === 将查询结果插入缓存 ===
-    if (dns_relay_cache_response(dns_entity->questions->qname, dns_entity) != MYSUCCESS) {
+    if (dns_relay_cache_response(dns_entity->questions->qname, dns_entity->questions->qtype, dns_entity) != MYSUCCESS) {
         log_warn("将响应缓存失败: %s", dns_entity->questions->qname);
     } else {
         log_debug("已将响应缓存: %s", dns_entity->questions->qname);

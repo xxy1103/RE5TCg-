@@ -18,7 +18,28 @@ static dns_lru_cache_t g_dns_cache;        // 全局LRU缓存
 // ============================================================================
 
 /**
- * @brief 域名哈希函数
+ * @brief 缓存键哈希函数
+ * 使用djb2算法计算缓存键的哈希值
+ */
+unsigned int hash_key(const char* key) {
+    if (!key) return 0;
+    
+    unsigned int hash = 5381;
+    int c;
+    
+    // 转换为小写并计算哈希
+    while ((c = *key++)) {
+        if (c >= 'A' && c <= 'Z') {
+            c += 32; // 转换为小写
+        }
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c
+    }
+    
+    return hash;
+}
+
+/**
+ * @brief 域名哈希函数（用于域名表）
  * 使用djb2算法计算域名的哈希值
  */
 unsigned int hash_domain(const char* domain) {
@@ -39,12 +60,12 @@ unsigned int hash_domain(const char* domain) {
 }
 
 /**
- * @brief 根据域名获取其所属的缓存段
+ * @brief 根据缓存键获取其所属的缓存段
  */
-dns_cache_segment_t* get_cache_segment(const char* domain) {
-    if (!domain) return NULL;
+dns_cache_segment_t* get_cache_segment(const char* key) {
+    if (!key) return NULL;
     
-    unsigned int hash = hash_domain(domain);
+    unsigned int hash = hash_key(key);
     // 使用位运算快速取模，前提是段数量为2的幂
     return &g_dns_cache.segments[hash & (DNS_CACHE_NUM_SEGMENTS - 1)];
 }
@@ -97,7 +118,7 @@ int domain_table_init() {
 }
 
 /**
- * @brief 从文件加载域名表（分段版本）
+ * @brief 从文件加载域名表（分段版本，支持IPv4和IPv6）
  */
 int domain_table_load_from_file(const char* filename) {
     if (!filename) return MYERROR;
@@ -127,30 +148,26 @@ int domain_table_load_from_file(const char* filename) {
             continue;
         }
         
-        // 创建新条目
-        domain_entry_t* entry = (domain_entry_t*)malloc(sizeof(domain_entry_t));
-        if (!entry) {
-            log_error("内存分配失败");
-            continue;
+        // 判断IP地址类型
+        unsigned short ip_type;
+        int is_blocked = 0;
+        if (strchr(ip, ':') != NULL) {
+            // IPv6地址
+            ip_type = AAAA;
+            is_blocked = (strcmp(ip, "::") == 0);
+        } else {
+            // IPv4地址
+            ip_type = A;
+            is_blocked = (strcmp(ip, "0.0.0.0") == 0);
         }
-        
-        // 复制数据
-        strncpy(entry->domain, domain, MAX_DOMAIN_LENGTH - 1);
-        entry->domain[MAX_DOMAIN_LENGTH - 1] = '\0';
-        strncpy(entry->ip, ip, MAX_IP_LENGTH - 1);
-        entry->ip[MAX_IP_LENGTH - 1] = '\0';
-        
-        // 检查是否为阻止条目
-        entry->is_blocked = (strcmp(ip, "0.0.0.0") == 0);
         
         // 获取对应的分段
         domain_table_segment_t* segment = get_domain_table_segment(domain);
         if (!segment) {
-            free(entry);
             continue;
         }
         
-        // 获取写锁并插入到分段的哈希桶中
+        // 获取写锁并查找或创建域名条目
         platform_rwlock_wrlock(&segment->rwlock);
         
         // 计算在分段内的哈希索引
@@ -158,10 +175,58 @@ int domain_table_load_from_file(const char* filename) {
         int buckets_per_segment = DOMAIN_TABLE_HASH_SIZE / DOMAIN_TABLE_NUM_SEGMENTS;
         unsigned int bucket_index = (global_hash / DOMAIN_TABLE_NUM_SEGMENTS) % buckets_per_segment;
         
-        // 插入到链表头部
-        entry->next = segment->hash_buckets[bucket_index];
-        segment->hash_buckets[bucket_index] = entry;
-        segment->entry_count++;
+        // 查找现有的域名条目
+        domain_entry_t* domain_entry = NULL;
+        domain_entry_t* current = segment->hash_buckets[bucket_index];
+        while (current) {
+            if (strcasecmp(current->domain, domain) == 0) {
+                domain_entry = current;
+                break;
+            }
+            current = current->next;
+        }
+        
+        // 如果没有找到域名条目，创建新的
+        if (!domain_entry) {
+            domain_entry = (domain_entry_t*)malloc(sizeof(domain_entry_t));
+            if (!domain_entry) {
+                log_error("内存分配失败");
+                platform_rwlock_unlock(&segment->rwlock);
+                continue;
+            }
+            
+            // 初始化域名条目
+            strncpy(domain_entry->domain, domain, MAX_DOMAIN_LENGTH - 1);
+            domain_entry->domain[MAX_DOMAIN_LENGTH - 1] = '\0';
+            domain_entry->ips = NULL;
+            domain_entry->is_blocked = 0;
+            
+            // 插入到链表头部
+            domain_entry->next = segment->hash_buckets[bucket_index];
+            segment->hash_buckets[bucket_index] = domain_entry;
+            segment->entry_count++;
+        }
+        
+        // 创建IP地址条目
+        ip_address_entry_t* ip_entry = (ip_address_entry_t*)malloc(sizeof(ip_address_entry_t));
+        if (!ip_entry) {
+            log_error("IP地址条目内存分配失败");
+            platform_rwlock_unlock(&segment->rwlock);
+            continue;
+        }
+        
+        ip_entry->type = ip_type;
+        strncpy(ip_entry->ip, ip, MAX_IP_LENGTH - 1);
+        ip_entry->ip[MAX_IP_LENGTH - 1] = '\0';
+        
+        // 将IP条目插入到域名条目的IP链表头部
+        ip_entry->next = domain_entry->ips;
+        domain_entry->ips = ip_entry;
+        
+        // 如果有任何一个IP地址被阻止，则整个域名被标记为阻止
+        if (is_blocked) {
+            domain_entry->is_blocked = 1;
+        }
         
         platform_rwlock_unlock(&segment->rwlock);
         loaded_count++;
@@ -171,21 +236,21 @@ int domain_table_load_from_file(const char* filename) {
     g_domain_table.total_entry_count = loaded_count;
     g_domain_table.last_load_time = time(NULL);
     
-    log_info("成功加载 %d 个域名条目到分段域名表", loaded_count);
+    log_info("成功加载 %d 个IP地址条目到分段域名表", loaded_count);
     return MYSUCCESS;
 }
 
 /**
- * @brief 查找域名表条目（分段读写锁版本）
+ * @brief 查找域名表条目（分段读写锁版本，支持查询类型）
  */
-domain_entry_t* domain_table_lookup(const char* domain) {
+ip_address_entry_t* domain_table_lookup(const char* domain, unsigned short qtype) {
     if (!domain) return NULL;
     
     // 获取对应的分段
     domain_table_segment_t* segment = get_domain_table_segment(domain);
     if (!segment) return NULL;
     
-    domain_entry_t* result = NULL;
+    ip_address_entry_t* result = NULL;
     
     // 获取读锁（多线程可以并发读取不同分段）
     platform_rwlock_rdlock(&segment->rwlock);
@@ -195,15 +260,23 @@ domain_entry_t* domain_table_lookup(const char* domain) {
     int buckets_per_segment = DOMAIN_TABLE_HASH_SIZE / DOMAIN_TABLE_NUM_SEGMENTS;
     unsigned int bucket_index = (global_hash / DOMAIN_TABLE_NUM_SEGMENTS) % buckets_per_segment;
     
-    // 在分段的哈希桶中查找
-    domain_entry_t* current = segment->hash_buckets[bucket_index];
-    while (current) {
-        // 不区分大小写比较
-        if (strcasecmp(current->domain, domain) == 0) {
-            result = current;
+    // 在分段的哈希桶中查找域名条目
+    domain_entry_t* domain_entry = segment->hash_buckets[bucket_index];
+    while (domain_entry) {
+        // 不区分大小写比较域名
+        if (strcasecmp(domain_entry->domain, domain) == 0) {
+            // 找到域名条目，现在在其IP链表中查找匹配的查询类型
+            ip_address_entry_t* ip_entry = domain_entry->ips;
+            while (ip_entry) {
+                if (ip_entry->type == qtype) {
+                    result = ip_entry;
+                    break;
+                }
+                ip_entry = ip_entry->next;
+            }
             break;
         }
-        current = current->next;
+        domain_entry = domain_entry->next;
     }
     
     platform_rwlock_unlock(&segment->rwlock);
@@ -211,7 +284,7 @@ domain_entry_t* domain_table_lookup(const char* domain) {
 }
 
 /**
- * @brief 销毁域名表（分段版本）
+ * @brief 销毁域名表（分段版本，支持IP链表）
  */
 void domain_table_destroy() {
     // 释放所有分段的内容并销毁锁
@@ -226,9 +299,19 @@ void domain_table_destroy() {
         for (int j = 0; j < buckets_per_segment; j++) {
             domain_entry_t* current = segment->hash_buckets[j];
             while (current) {
-                domain_entry_t* next = current->next;
+                domain_entry_t* next_domain = current->next;
+                
+                // 释放该域名条目的所有IP地址条目
+                ip_address_entry_t* ip_entry = current->ips;
+                while (ip_entry) {
+                    ip_address_entry_t* next_ip = ip_entry->next;
+                    free(ip_entry);
+                    ip_entry = next_ip;
+                }
+                
+                // 释放域名条目
                 free(current);
-                current = next;
+                current = next_domain;
             }
             segment->hash_buckets[j] = NULL;
         }
@@ -356,7 +439,7 @@ dns_cache_entry_t* lru_remove_tail_segment(dns_cache_segment_t* segment) {
     dns_cache_entry_t* tail = segment->lru_tail;
     
     // 从哈希表中移除
-    unsigned int hash_index = hash_domain(tail->domain) % DNS_CACHE_HASH_SIZE;
+    unsigned int hash_index = hash_key(tail->key) % DNS_CACHE_HASH_SIZE;
     dns_cache_entry_t* current = g_dns_cache.hash_table[hash_index];
     dns_cache_entry_t* prev = NULL;
     
@@ -387,18 +470,22 @@ dns_cache_entry_t* lru_remove_tail_segment(dns_cache_segment_t* segment) {
     segment->current_size--;
     g_dns_cache.cache_evictions++;
     
-    log_debug("分段LRU缓存移除尾部条目: %s, 分段当前大小: %d", tail->domain, segment->current_size);
+    log_debug("分段LRU缓存移除尾部条目: %s, 分段当前大小: %d", tail->key, segment->current_size);
     return tail;
 }
 
 /**
- * @brief 从缓存获取DNS条目（分段读写锁版本）
+ * @brief 从缓存获取DNS条目（分段读写锁版本，支持查询类型）
  */
-dns_cache_entry_t* dns_cache_get(const char* domain) {
+dns_cache_entry_t* dns_cache_get(const char* domain, unsigned short qtype) {
     if (!domain) return NULL;
     
+    // 生成缓存键
+    char cache_key[MAX_CACHE_KEY_LENGTH];
+    snprintf(cache_key, sizeof(cache_key), "%s:%u", domain, qtype);
+    
     // 获取对应的分段
-    dns_cache_segment_t* segment = get_cache_segment(domain);
+    dns_cache_segment_t* segment = get_cache_segment(cache_key);
     if (!segment) return NULL;
     
     dns_cache_entry_t* result = NULL;
@@ -406,15 +493,15 @@ dns_cache_entry_t* dns_cache_get(const char* domain) {
     // 获取读锁
     platform_rwlock_rdlock(&segment->rwlock);
     
-    unsigned int hash_index = hash_domain(domain) % DNS_CACHE_HASH_SIZE;
+    unsigned int hash_index = hash_key(cache_key) % DNS_CACHE_HASH_SIZE;
     dns_cache_entry_t* current = g_dns_cache.hash_table[hash_index];
     
     while (current) {
-        if (strcasecmp(current->domain, domain) == 0) {
+        if (strcasecmp(current->key, cache_key) == 0) {
             // 检查是否过期
             time_t now = time(NULL);
             if (now > current->expire_time) {
-                log_debug("缓存条目已过期: %s", domain);
+                log_debug("缓存条目已过期: %s", cache_key);
                 g_dns_cache.cache_misses++;
                 break; // 过期了，退出循环
             }
@@ -424,13 +511,13 @@ dns_cache_entry_t* dns_cache_get(const char* domain) {
             platform_rwlock_wrlock(&segment->rwlock);
             
             // 再次检查（因为在锁切换期间可能被其他线程修改）
-            if (now <= current->expire_time && strcasecmp(current->domain, domain) == 0) {
+            if (now <= current->expire_time && strcasecmp(current->key, cache_key) == 0) {
                 // 更新访问时间并移动到头部
                 current->access_time = now;
                 lru_move_to_head_segment(segment, current);
                 g_dns_cache.cache_hits++;
                 result = current;
-                log_debug("缓存命中: %s", domain);
+                log_debug("缓存命中: %s", cache_key);
             } else {
                 g_dns_cache.cache_misses++;
             }
@@ -441,7 +528,7 @@ dns_cache_entry_t* dns_cache_get(const char* domain) {
     
     if (!result) {
         g_dns_cache.cache_misses++;
-        log_debug("缓存未命中: %s", domain);
+        log_debug("缓存未命中: %s", cache_key);
     }
     
     platform_rwlock_unlock(&segment->rwlock);
@@ -450,16 +537,16 @@ dns_cache_entry_t* dns_cache_get(const char* domain) {
 
 /**
  * @brief 内部函数：查找缓存条目（不检查过期，不移动LRU）
- * 仅用于内部逻辑，根据域名查找对应的缓存条目
+ * 仅用于内部逻辑，根据缓存键查找对应的缓存条目
  */
-static dns_cache_entry_t* dns_cache_find_entry_internal(const char* domain) {
-    if (!domain) return NULL;
+static dns_cache_entry_t* dns_cache_find_entry_internal(const char* cache_key) {
+    if (!cache_key) return NULL;
     
-    unsigned int hash_index = hash_domain(domain) % DNS_CACHE_HASH_SIZE;
+    unsigned int hash_index = hash_key(cache_key) % DNS_CACHE_HASH_SIZE;
     dns_cache_entry_t* current = g_dns_cache.hash_table[hash_index];
     
     while (current) {
-        if (strcasecmp(current->domain, domain) == 0) {
+        if (strcasecmp(current->key, cache_key) == 0) {
             return current; // 找到了，直接返回，不检查过期
         }
         current = current->hash_next;
@@ -469,23 +556,27 @@ static dns_cache_entry_t* dns_cache_find_entry_internal(const char* domain) {
 }
 
 /**
- * @brief 向缓存添加DNS条目（分段读写锁版本）
+ * @brief 向缓存添加DNS条目（分段读写锁版本，支持查询类型）
  */
-int dns_cache_put(const char* domain, DNS_ENTITY* response, int ttl) {
+int dns_cache_put(const char* domain, unsigned short qtype, DNS_ENTITY* response, int ttl) {
     if (!domain || !response) return MYERROR;
     
+    // 生成缓存键
+    char cache_key[MAX_CACHE_KEY_LENGTH];
+    snprintf(cache_key, sizeof(cache_key), "%s:%u", domain, qtype);
+    
     // 获取对应的分段
-    dns_cache_segment_t* segment = get_cache_segment(domain);
+    dns_cache_segment_t* segment = get_cache_segment(cache_key);
     if (!segment) return MYERROR;
     
     // 获取写锁
     platform_rwlock_wrlock(&segment->rwlock);
     
     // 使用内部函数查找，无论是否过期
-    dns_cache_entry_t* entry = dns_cache_find_entry_internal(domain);
+    dns_cache_entry_t* entry = dns_cache_find_entry_internal(cache_key);
     if (entry) {
         // --- 路径A：找到了条目（无论是有效的还是过期的），执行原地更新 ---
-        log_debug("复用现有缓存槽位进行更新: %s", domain);
+        log_debug("复用现有缓存槽位进行更新: %s", cache_key);
         
         // 1. 释放旧的DNS响应数据
         if (entry->dns_response) {
@@ -500,12 +591,12 @@ int dns_cache_put(const char* domain, DNS_ENTITY* response, int ttl) {
         lru_move_to_head_segment(segment, entry);
         
         platform_rwlock_unlock(&segment->rwlock);
-        log_debug("原地更新缓存条目: %s", domain);
+        log_debug("原地更新缓存条目: %s", cache_key);
         return MYSUCCESS;
     }    
     
-    // --- 路径B：完全没找到条目，这是一个全新的域名，执行插入 ---
-    log_debug("为新域名创建缓存条目: %s", domain);
+    // --- 路径B：完全没找到条目，这是一个全新的缓存键，执行插入 ---
+    log_debug("为新缓存键创建缓存条目: %s", cache_key);
     
     dns_cache_entry_t* evicted_entry = NULL;
     
@@ -545,8 +636,8 @@ int dns_cache_put(const char* domain, DNS_ENTITY* response, int ttl) {
     dns_cache_entry_t* new_entry = &g_dns_cache.entry_pool[free_index];
     
     // 填充条目
-    strncpy(new_entry->domain, domain, MAX_DOMAIN_LENGTH - 1);
-    new_entry->domain[MAX_DOMAIN_LENGTH - 1] = '\0';
+    strncpy(new_entry->key, cache_key, MAX_CACHE_KEY_LENGTH - 1);
+    new_entry->key[MAX_CACHE_KEY_LENGTH - 1] = '\0';
     new_entry->dns_response = response;
     new_entry->expire_time = time(NULL) + (ttl > 0 ? ttl : DEFAULT_TTL);
     new_entry->access_time = time(NULL);
@@ -558,7 +649,7 @@ int dns_cache_put(const char* domain, DNS_ENTITY* response, int ttl) {
     platform_rwlock_wrlock(&segment->rwlock);
     
     // 插入哈希表
-    unsigned int hash_index = hash_domain(domain) % DNS_CACHE_HASH_SIZE;
+    unsigned int hash_index = hash_key(cache_key) % DNS_CACHE_HASH_SIZE;
     new_entry->hash_next = g_dns_cache.hash_table[hash_index];
     g_dns_cache.hash_table[hash_index] = new_entry;
     
@@ -568,7 +659,7 @@ int dns_cache_put(const char* domain, DNS_ENTITY* response, int ttl) {
     
     platform_rwlock_unlock(&segment->rwlock);
     
-    log_debug("添加新缓存条目: %s, TTL: %d, 分段当前大小: %d", domain, ttl, segment->current_size);
+    log_debug("添加新缓存条目: %s, TTL: %d, 分段当前大小: %d", cache_key, ttl, segment->current_size);
     return MYSUCCESS;
 }
 
@@ -712,33 +803,40 @@ dns_query_response_t* dns_relay_query(const char* domain, unsigned short qtype) 
     memset(response, 0, sizeof(dns_query_response_t));
     
     // 第一步：查询本地域名表
-    domain_entry_t* local_entry = domain_table_lookup(domain);
+    ip_address_entry_t* local_entry = domain_table_lookup(domain, qtype);
     if (local_entry) {
-        if (local_entry->is_blocked) {
+        // 检查是否为阻止地址
+        int is_blocked = 0;
+        if (qtype == A && strcmp(local_entry->ip, "0.0.0.0") == 0) {
+            is_blocked = 1;
+        } else if (qtype == AAAA && strcmp(local_entry->ip, "::") == 0) {
+            is_blocked = 1;
+        }
+        
+        if (is_blocked) {
             response->result_type = QUERY_RESULT_BLOCKED;
-            log_info("域名被阻止: %s", domain);
-
+            log_info("域名被阻止: %s (type:%u)", domain, qtype);
         } else {
             response->result_type = QUERY_RESULT_LOCAL_HIT;
             strncpy(response->resolved_ip, local_entry->ip, MAX_IP_LENGTH - 1);
-            log_info("本地表命中: %s -> %s", domain, local_entry->ip);
+            log_info("本地表命中: %s (type:%u) -> %s", domain, qtype, local_entry->ip);
         }
         
         return response;
     }
     
     // 第二步：查询缓存
-    dns_cache_entry_t* cache_entry = dns_cache_get(domain);
+    dns_cache_entry_t* cache_entry = dns_cache_get(domain, qtype);
     if (cache_entry && cache_entry->dns_response) {
         response->result_type = QUERY_RESULT_CACHE_HIT;
         response->dns_response = cache_entry->dns_response; // 注意：这里只是引用，不要释放
-        log_info("缓存命中: %s", domain);
+        log_info("缓存命中: %s (type:%u)", domain, qtype);
         return response;
     }
     
     // 第三步：需要查询上游DNS
     response->result_type = QUERY_RESULT_CACHE_MISS;
-    log_debug("需要查询上游DNS: %s", domain);
+    log_debug("需要查询上游DNS: %s (type:%u)", domain, qtype);
     return response;
 }
 
@@ -791,7 +889,7 @@ void dns_relay_cleanup(void) {
  * @brief 向缓存添加上游DNS响应
  * 这个函数用于在收到上游DNS响应后将其添加到缓存
  */
-int dns_relay_cache_response(const char* domain, DNS_ENTITY* response) {
+int dns_relay_cache_response(const char* domain, unsigned short qtype, DNS_ENTITY* response) {
     if (!domain || !response) return MYERROR;
     
     // 从DNS响应中提取TTL
@@ -800,7 +898,7 @@ int dns_relay_cache_response(const char* domain, DNS_ENTITY* response) {
         ttl = response->answers[0].ttl;
     }
     
-    return dns_cache_put(domain, response, ttl);
+    return dns_cache_put(domain, qtype, response, ttl);
 }
 
 /**

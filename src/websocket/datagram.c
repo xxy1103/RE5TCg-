@@ -107,20 +107,12 @@ int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity) {    int of
     offset += 2;    
     // 写入问题部分
     for (int i = 0; i < dns_entity->qdcount; i++) {
-        // 检查域名格式并写入域名
-        if (strchr(dns_entity->questions[i].qname, '.') != NULL) {
-            // 包含点号，是人类可读格式，需要转换为DNS格式
-            char dns_formatted[256];
-            format_domain_name(dns_formatted, dns_entity->questions[i].qname);
-            int qname_len = get_dns_name_length(dns_formatted);
-            memcpy(buffer + offset, dns_formatted, qname_len);
-            offset += qname_len;
-        } else {
-            // 不包含点号，可能已经是DNS格式或者是单个标签
-            int qname_len = get_dns_name_length(dns_entity->questions[i].qname);
-            memcpy(buffer + offset, dns_entity->questions[i].qname, qname_len);
-            offset += qname_len;
-        }
+        // 始终将域名转换为DNS格式
+        char dns_formatted[256];
+        format_domain_name(dns_formatted, dns_entity->questions[i].qname);
+        int qname_len = get_dns_name_length(dns_formatted);
+        memcpy(buffer + offset, dns_formatted, qname_len);
+        offset += qname_len;
         
         // 写入qtype和qclass
         *((unsigned short*)(buffer + offset)) = htons(dns_entity->questions[i].qtype);
@@ -129,22 +121,12 @@ int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity) {    int of
         offset += 2;
     }    // 写入答案部分
     for (int i = 0; i < dns_entity->ancount; i++) {
-        // 检查域名格式并写入域名
-        // 改进的DNS格式检测：检查是否包含点号来判断是否为人类可读格式
-        if (strchr(dns_entity->answers[i].name, '.') != NULL) {
-            // 包含点号，是人类可读格式，需要转换为DNS格式
-            char dns_formatted[256];
-            format_domain_name(dns_formatted, dns_entity->answers[i].name);
-            int name_len = get_dns_name_length(dns_formatted);
-            memcpy(buffer + offset, dns_formatted, name_len);
-            offset += name_len;
-        } else {
-            // 不包含点号，可能已经是DNS格式或者是单个标签
-            // 直接使用原始数据
-            int name_len = get_dns_name_length(dns_entity->answers[i].name);
-            memcpy(buffer + offset, dns_entity->answers[i].name, name_len);
-            offset += name_len;
-        }
+        // 始终将域名转换为DNS格式
+        char dns_formatted[256];
+        format_domain_name(dns_formatted, dns_entity->answers[i].name);
+        int name_len = get_dns_name_length(dns_formatted);
+        memcpy(buffer + offset, dns_formatted, name_len);
+        offset += name_len;
         
         // 写入type、class、ttl、data_len
         *((unsigned short*)(buffer + offset)) = htons(dns_entity->answers[i].type);
@@ -158,15 +140,15 @@ int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity) {    int of
         // 写入rdata
         if (dns_entity->answers[i].type == CNAME) {
             // 对于CNAME记录，需要将字符串格式的域名转换为DNS格式
-            char dns_formatted[256];
-            format_domain_name(dns_formatted, dns_entity->answers[i].rdata);
-            int cname_len = get_dns_name_length(dns_formatted);
+            char dns_formatted_rdata[256];
+            format_domain_name(dns_formatted_rdata, dns_entity->answers[i].rdata);
+            int cname_len = get_dns_name_length(dns_formatted_rdata);
             
             // 更新data_len为实际的DNS格式长度（回退到data_len字段位置）
             *((unsigned short*)(buffer + offset - 2)) = htons(cname_len);
             
             // 写入DNS格式的CNAME数据
-            memcpy(buffer + offset, dns_formatted, cname_len);
+            memcpy(buffer + offset, dns_formatted_rdata, cname_len);
             offset += cname_len;
         } else {
             // 对于其他类型的记录，直接复制原始数据
@@ -175,20 +157,12 @@ int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity) {    int of
         }
     }    // 写入权威记录部分
     for (int i = 0; i < dns_entity->nscount; i++) {
-        // 检查域名格式并写入域名
-        if (strchr(dns_entity->authorities[i].name, '.') != NULL) {
-            // 包含点号，是人类可读格式，需要转换为DNS格式
-            char dns_formatted[256];
-            format_domain_name(dns_formatted, dns_entity->authorities[i].name);
-            int name_len = get_dns_name_length(dns_formatted);
-            memcpy(buffer + offset, dns_formatted, name_len);
-            offset += name_len;
-        } else {
-            // 不包含点号，可能已经是DNS格式或者是单个标签
-            int name_len = get_dns_name_length(dns_entity->authorities[i].name);
-            memcpy(buffer + offset, dns_entity->authorities[i].name, name_len);
-            offset += name_len;
-        }
+        // 始终将域名转换为DNS格式
+        char dns_formatted[256];
+        format_domain_name(dns_formatted, dns_entity->authorities[i].name);
+        int name_len = get_dns_name_length(dns_formatted);
+        memcpy(buffer + offset, dns_formatted, name_len);
+        offset += name_len;
         
         // 写入type、class、ttl、data_len
         *((unsigned short*)(buffer + offset)) = htons(dns_entity->authorities[i].type);
@@ -202,15 +176,15 @@ int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity) {    int of
         // 写入rdata
         if (dns_entity->authorities[i].type == CNAME) {
             // 对于CNAME记录，需要将字符串格式的域名转换为DNS格式
-            char dns_formatted[256];
-            format_domain_name(dns_formatted, dns_entity->authorities[i].rdata);
-            int cname_len = get_dns_name_length(dns_formatted);
+            char dns_formatted_rdata[256];
+            format_domain_name(dns_formatted_rdata, dns_entity->authorities[i].rdata);
+            int cname_len = get_dns_name_length(dns_formatted_rdata);
             
             // 更新data_len为实际的DNS格式长度
             *((unsigned short*)(buffer + offset - 2)) = htons(cname_len);
             
             // 写入DNS格式的CNAME数据
-            memcpy(buffer + offset, dns_formatted, cname_len);
+            memcpy(buffer + offset, dns_formatted_rdata, cname_len);
             offset += cname_len;
         } else {
             // 对于其他类型的记录，直接复制原始数据
@@ -221,20 +195,12 @@ int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity) {    int of
 
     // 写入附加记录部分
     for (int i = 0; i < dns_entity->arcount; i++) {
-        // 检查域名格式并写入域名
-        if (strchr(dns_entity->additionals[i].name, '.') != NULL) {
-            // 包含点号，是人类可读格式，需要转换为DNS格式
-            char dns_formatted[256];
-            format_domain_name(dns_formatted, dns_entity->additionals[i].name);
-            int name_len = get_dns_name_length(dns_formatted);
-            memcpy(buffer + offset, dns_formatted, name_len);
-            offset += name_len;
-        } else {
-            // 不包含点号，可能已经是DNS格式或者是单个标签
-            int name_len = get_dns_name_length(dns_entity->additionals[i].name);
-            memcpy(buffer + offset, dns_entity->additionals[i].name, name_len);
-            offset += name_len;
-        }
+        // 始终将域名转换为DNS格式
+        char dns_formatted[256];
+        format_domain_name(dns_formatted, dns_entity->additionals[i].name);
+        int name_len = get_dns_name_length(dns_formatted);
+        memcpy(buffer + offset, dns_formatted, name_len);
+        offset += name_len;
         
         // 写入type、class、ttl、data_len
         *((unsigned short*)(buffer + offset)) = htons(dns_entity->additionals[i].type);
@@ -248,15 +214,15 @@ int serialize_dns_packet(char* buffer, const DNS_ENTITY* dns_entity) {    int of
         // 写入rdata
         if (dns_entity->additionals[i].type == CNAME) {
             // 对于CNAME记录，需要将字符串格式的域名转换为DNS格式
-            char dns_formatted[256];
-            format_domain_name(dns_formatted, dns_entity->additionals[i].rdata);
-            int cname_len = get_dns_name_length(dns_formatted);
+            char dns_formatted_rdata[256];
+            format_domain_name(dns_formatted_rdata, dns_entity->additionals[i].rdata);
+            int cname_len = get_dns_name_length(dns_formatted_rdata);
             
             // 更新data_len为实际的DNS格式长度
             *((unsigned short*)(buffer + offset - 2)) = htons(cname_len);
             
             // 写入DNS格式的CNAME数据
-            memcpy(buffer + offset, dns_formatted, cname_len);
+            memcpy(buffer + offset, dns_formatted_rdata, cname_len);
             offset += cname_len;
         } else {
             // 对于其他类型的记录，直接复制原始数据
@@ -946,23 +912,23 @@ int get_dns_name_length(const char* dns_name) {
     
     int length = 0;
     
-    while (dns_name[length] != 0) {
-        int label_len = (unsigned char)dns_name[length];
+    while (1) {
+        unsigned char label_len = (unsigned char)dns_name[length];
         
         // 检查是否是压缩指针
         if ((label_len & 0xC0) == 0xC0) {
-            // 压缩指针，占用2字节
-            length += 2;
+            length += 2; // 指针长度为2字节
             break;
         }
         
-        // 跳过长度字节和标签内容
+        // 检查是否是域名结尾
+        if (label_len == 0) {
+            length += 1; // 包含结尾的0字节
+            break;
+        }
+        
+        // 普通标签，跳过长度字节和标签内容
         length += 1 + label_len;
-    }
-    
-    // 如果不是压缩指针，需要包含结尾的0字节
-    if (dns_name[length] == 0) {
-        length += 1;
     }
     
     return length;
