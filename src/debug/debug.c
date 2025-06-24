@@ -9,14 +9,16 @@ LogLevel current_log_level = LOG_LEVEL_INFO;
 static FILE* log_file = NULL;
 static const char* LOG_FILE_PATH = "log.txt";
 
-// 将日志级别枚举转换为字符串
+/**
+ * @brief 将日志级别枚举转换为字符串
+ */
 const char* log_level_to_string(LogLevel level) {
     switch (level) {
-        case LOG_LEVEL_ERROR: return "ERROR";
-        case LOG_LEVEL_WARN:  return "WARN";
-        case LOG_LEVEL_INFO:  return "INFO";
-        case LOG_LEVEL_DEBUG: return "DEBUG";
-        default:              return "UNKNOWN";
+        case LOG_LEVEL_ERROR: return "error";
+        case LOG_LEVEL_WARN:  return "warn";
+        case LOG_LEVEL_INFO:  return "info";
+        case LOG_LEVEL_DEBUG: return "debug";
+        default:              return "unknown";
     }
 }
 

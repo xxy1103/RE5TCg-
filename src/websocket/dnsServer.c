@@ -1,7 +1,6 @@
 #include "websocket/dnsServer.h"
 #include "platform/platform.h"
 #include "Thread/thread_pool.h"
-#include "websocket/upstream_config.h"
 #include <time.h>  // 添加时间相关的头文件支持
 #include <string.h> // 包含 memset 和 strcmp
 
@@ -190,15 +189,6 @@ if (sendDnsPacket(server_socket, mapping->client_addr, dns_entity) == MYERROR) {
 int start_dns_proxy_server_threaded() {
     struct sockaddr_in server_addr; // 服务器地址结构    log_info("=== 启动多线程DNS代理服务器 ===");    
     
-    // === 第一步：初始化DNS上游服务器池 ===
-    // 尝试从配置文件加载DNS服务器
-    if (upstream_pool_load_from_file(&g_upstream_pool, "upstream_dns.conf") != MYSUCCESS) {
-        log_info("从配置文件加载失败");
-        return MYERROR;
-    }
-    
-    log_debug("初始化DNS上游服务器池成功，共加载 %d 个服务器", g_upstream_pool.server_count);
-    upstream_pool_print_status(&g_upstream_pool);
 
     // === 第二步：初始化映射表 ===
     init_mapping_table(&g_mapping_table);

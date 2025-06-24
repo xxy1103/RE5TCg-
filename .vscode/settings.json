@@ -7,6 +7,10 @@
         "string.h": "c",
         "debug.h": "c",
         "*.bak": "c",
-        "errno.h": "c"
+        "errno.h": "c",
+        "stdlib.h": "c",
+        "dnsserver.h": "c",
+        "platform.h": "c",
+        "upstream_config.h": "c"
     }
 }

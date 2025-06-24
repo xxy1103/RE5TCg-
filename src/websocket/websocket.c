@@ -1,8 +1,7 @@
 #include "websocket/websocket.h"
-#include "platform/platform.h"
-#include <stdlib.h>  // 为rand()和srand()函数
-#include <time.h>    // 为time()函数
-#include <string.h>  // 为strcpy()函数
+
+// 最大IP地址长度（IPv6最大长度为45字符，加1为46）
+#define MAX_IP_LENGTH 46
 
 //全局变量定义
 struct sockaddr_in upstream_addr;
@@ -29,18 +28,96 @@ struct sockaddr_in get_upstream_addr()
 }
 
 /**
+ * @brief 从配置文件加载DNS服务器列表
+ * @param pool DNS服务器池指针
+ * @param config_file 配置文件路径
+ * @return 成功返回MYSUCCESS，失败返回MYERROR
+ */
+int upstream_pool_load_from_file(upstream_dns_pool_t* pool, const char* config_file) {
+    if (!pool || !config_file) {
+        return MYERROR;
+    }
+    
+    FILE* file = fopen(config_file, "r");
+    if (!file) {
+        return MYERROR;
+    }
+    
+    char line[256];
+    int loaded_count = 0;
+    
+    while (fgets(line, sizeof(line), file) && loaded_count < MAX_UPSTREAM_SERVERS) {
+        // 移除行尾的换行符
+        char* newline = strchr(line, '\n');
+        if (newline) {
+            *newline = '\0';
+        }
+        
+        // 跳过空行和注释行
+        if (strlen(line) == 0 || line[0] == '#') {
+            continue;
+        }
+        
+        // 简单的IP地址格式验证
+        if (strlen(line) >= 7 && strlen(line) < MAX_IP_LENGTH) {
+            if (upstream_pool_add_server(pool, line) == MYSUCCESS) {
+                loaded_count++;
+            }
+        }
+    }
+    
+    fclose(file);
+    
+    if (loaded_count > 0) {
+        log_debug("从配置文件成功加载 %d 个DNS服务器", loaded_count);
+        return MYSUCCESS;
+    } else {
+        return MYERROR;
+    }
+}
+
+/**
+ * @brief 打印当前DNS服务器池状态
+ * @param pool DNS服务器池指针
+ */
+void upstream_pool_print_status(upstream_dns_pool_t* pool) {
+    if (!pool) {
+        log_error("DNS服务器池: 未初始化\n");
+        return;
+    }
+
+    log_info("=== DNS上游服务器池状态 ===");
+    log_info("服务器数量: %d/%d", pool->server_count, MAX_UPSTREAM_SERVERS);
+    log_info("当前索引: %d", pool->current_index);
+    log_info("服务器列表:");
+
+    for (int i = 0; i < pool->server_count; i++) {
+        log_info("  [%d] %s", i, inet_ntoa(pool->servers[i].sin_addr));
+    }
+
+    log_info("=========================");
+}
+
+/**
  * @brief 初始化上游DNS服务器池
  * @param pool 服务器池指针
  * @return 成功返回MYSUCCESS，失败返回MYERROR
  */
-int upstream_pool_init(upstream_dns_pool_t* pool) {
+int upstream_pool_init(upstream_dns_pool_t* pool, const char* config_file) {
     if (!pool) {
         return MYERROR;
     }
     
     pool->server_count = 0;
     pool->current_index = 0;
-    
+    // 尝试从配置文件加载，失败则使用默认DNS服务器
+    if (upstream_pool_load_from_file(pool, config_file) != MYSUCCESS) {
+        log_error("从配置文件加载上游DNS失败，使用谷歌公共DNS服务器: %s", "8.8.8.8");
+        upstream_pool_add_server(pool, "8.8.8.8");  
+    }
+    log_info("成功加载上游DNS服务器池，当前服务器数量: %d", pool->server_count);
+    upstream_pool_print_status(pool);  // 打印当前池状态
+
     return MYSUCCESS;
 }
 

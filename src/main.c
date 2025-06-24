@@ -10,11 +10,8 @@
 #include <string.h>   // 包含字符串处理函数
 #include <stdlib.h>   // 包含内存管理函数
 #include "debug/debug.h"   // 包含调试相关的头文件
-#include "websocket/upstream_config.h" // 包含上游DNS配置功能
-#include "DNScache/relayBuild.h" // 包含DNS中继核心功能
 
-// 外部全局变量，在websocket.c中定义
-extern upstream_dns_pool_t g_upstream_pool;
+#include "DNScache/relayBuild.h" // 包含DNS中继核心功能
 
 /**
  * @brief 打印程序使用帮助信息
@@ -22,62 +19,61 @@ extern upstream_dns_pool_t g_upstream_pool;
 void print_usage(const char* program_name) {
     printf("DNS中继服务器 - 计算机网络课程设计\n");
     printf("\n使用方法:\n");
-    printf("  %s [选项] [DNS服务器IP] [配置文件]\n\n", program_name);
+    printf("  %s [选项]\n\n", program_name);
     printf("参数说明:\n");
-    printf("  -d              调试级别1 (输出基本信息：时间、序号、客户端IP、查询域名)\n");
-    printf("  -dd             调试级别2 (输出详细调试信息)\n");
-    printf("  DNS服务器IP     指定上游DNS服务器IP地址 (默认: 202.106.0.20)\n");
-    printf("  配置文件        指定域名配置文件路径 (默认: dnsrelay.txt)\n\n");
+    printf("  -h, --help      显示此帮助信息\n");
+    printf("  -d <级别>       设置日志级别 (error/warn/info/debug，默认: info)\n");
+    printf("  -dd             调试级别2 (等价于 -d debug)\n");
+    printf("  -c <文件>       指定DNS服务器配置文件 (默认: upstream_dns.conf)\n");
+    printf("  -r <文件>       指定域名配置文件路径 (默认: dnsrelay.txt)\n\n");
+    printf("日志级别说明:\n");
+    printf("  error           只输出错误信息\n");
+    printf("  warn            输出警告和错误信息\n");
+    printf("  info            输出基本信息、警告和错误信息\n");
+    printf("  debug           输出所有调试信息\n\n");
     printf("示例:\n");
     printf("  %s                              # 使用默认配置\n", program_name);
-    printf("  %s -d                           # 调试级别1，使用默认配置\n", program_name);
-    printf("  %s -dd 8.8.8.8                  # 调试级别2，指定DNS服务器\n", program_name);
-    printf("  %s -d 192.168.1.1 my_dns.txt    # 调试级别1，指定DNS服务器和配置文件\n", program_name);
+    printf("  %s -h                           # 显示帮助信息\n", program_name);
+    printf("  %s -d info                      # 设置日志级别为info\n", program_name);
+    printf("  %s -d debug                     # 设置日志级别为debug\n", program_name);
+    printf("  %s -dd                          # 调试级别2 (等价于debug)\n", program_name);
+    printf("  %s -c dns.conf                  # 指定DNS服务器配置文件\n", program_name);
+    printf("  %s -r my_dns.txt               # 指定域名配置文件\n", program_name);
+    printf("  %s -d warn -c dns.conf -r my_dns.txt # 警告级别，指定配置文件\n", program_name);
     printf("\n");
 }
 
-/**
- * @brief 验证IP地址格式
- * @param ip_str IP地址字符串
- * @return 有效返回1，无效返回0
- */
-int is_valid_ip(const char* ip_str) {
-    if (!ip_str) return 0;
-    
-    int a, b, c, d;
-    if (sscanf(ip_str, "%d.%d.%d.%d", &a, &b, &c, &d) != 4) {
-        return 0;
-    }
-    
-    return (a >= 0 && a <= 255) && (b >= 0 && b <= 255) && 
-           (c >= 0 && c <= 255) && (d >= 0 && d <= 255);
-}
 
 /**
- * @brief 设置默认DNS服务器
- * @param dns_server_ip DNS服务器IP地址
- * @return 成功返回MYSUCCESS，失败返回MYERROR
+ * @brief 将字符串转换为日志级别枚举
  */
-int set_default_dns_server(const char* dns_server_ip) {
-    // 清空当前的服务器池
-    g_upstream_pool.server_count = 0;
-    g_upstream_pool.current_index = 0;
-    
-    // 添加指定的DNS服务器
-    if (upstream_pool_add_server(&g_upstream_pool, dns_server_ip) != MYSUCCESS) {
-        log_error("添加DNS服务器失败: %s", dns_server_ip);
-        return MYERROR;
+LogLevel string_to_log_level(const char* level_str) {
+    if (!level_str) {
+        return LOG_LEVEL_INFO;  // 默认级别
     }
     
-    log_info("设置上游DNS服务器: %s", dns_server_ip);
-    return MYSUCCESS;
+    if (strcmp(level_str, "error") == 0) {
+        return LOG_LEVEL_ERROR;
+    } else if (strcmp(level_str, "warn") == 0) {
+        return LOG_LEVEL_WARN;
+    } else if (strcmp(level_str, "info") == 0) {
+        return LOG_LEVEL_INFO;
+    } else if (strcmp(level_str, "debug") == 0) {
+        return LOG_LEVEL_DEBUG;
+    } else {
+        return LOG_LEVEL_INFO;  // 默认级别
+    }
 }
+
+
+// 外部全局变量，在websocket.c中定义
+extern upstream_dns_pool_t g_upstream_pool;
 
 /**
  * @brief 程序主入口点
  * 
  * 支持命令行参数：
- * dnsrelay [-d | -dd] [dns-server-ipaddr] [filename]
+ * dnsrelay [-h | --help] [-d <level> | -dd] [-c config_file] [-r filename]
  * 
  * @param argc 命令行参数个数
  * @param argv 命令行参数数组
@@ -85,10 +81,9 @@ int set_default_dns_server(const char* dns_server_ip) {
  */
 int main(int argc, char* argv[]) {
     // === 参数解析变量 ===
-    LogLevel debug_level = LOG_LEVEL_INFO;  // 默认日志级别
-    const char* dns_server_ip = "202.106.0.20";  // 默认DNS服务器（任务书要求）
+    LogLevel debug_level = LOG_LEVEL_INFO;  // 默认日志级别为info
+    const char* dns_server_ip_conf = "upstream_dns.conf";  // 默认DNS服务器配置文件
     const char* config_file = "dnsrelay.txt";    // 默认配置文件
-    int use_custom_dns = 0;  // 是否指定了自定义DNS服务器
     
     // === 解析命令行参数 ===
     int arg_index = 1;
@@ -98,27 +93,33 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         else if (strcmp(argv[arg_index], "-d") == 0) {
-            debug_level = LOG_LEVEL_DEBUG;
-            log_info("启用调试级别1：输出基本调试信息");
-            arg_index++;
+            if (arg_index + 1 < argc) {
+                debug_level = string_to_log_level(argv[arg_index + 1]);
+                log_info("设置日志级别为: %s", log_level_to_string(debug_level));
+                arg_index++;
+            } else {
+                // 如果没有指定级别，默认使用info
+                debug_level = LOG_LEVEL_INFO;
+                log_info("使用默认日志级别: %s", log_level_to_string(debug_level));
+            }
         }
         else if (strcmp(argv[arg_index], "-dd") == 0) {
-            debug_level = LOG_LEVEL_DEBUG;  // 使用相同级别，但可以在日志系统中进一步区分
+            debug_level = LOG_LEVEL_DEBUG;  
             log_info("启用调试级别2：输出详细调试信息");
-            arg_index++;
         }
-        else if (is_valid_ip(argv[arg_index])) {
-            dns_server_ip = argv[arg_index];
-            use_custom_dns = 1;
-            log_info("指定DNS服务器: %s", dns_server_ip);
-            arg_index++;
+        else if (strcmp(argv[arg_index], "-c") == 0) {
+            if (arg_index + 1 < argc) {
+                dns_server_ip_conf = argv[arg_index + 1];
+                log_info("指定DNS服务器配置文件: %s", dns_server_ip_conf);
+                arg_index++;
+            }
         }
-        else {
+        else if (strcmp(argv[arg_index], "-r") == 0) {
             // 假设是配置文件路径
             config_file = argv[arg_index];
             log_info("指定配置文件: %s", config_file);
-            arg_index++;
         }
+        arg_index++;
     }
     
     // === 验证配置文件是否存在 ===
@@ -138,8 +139,8 @@ int main(int argc, char* argv[]) {
     log_info("=== DNS中继服务器启动 ===");
     log_info("程序版本: 多线程高性能版本");
     log_info("命令行参数解析完成:");
-    log_info("  - 调试级别: %s", (debug_level == LOG_LEVEL_DEBUG) ? "调试模式" : "普通模式");
-    log_info("  - DNS服务器: %s", dns_server_ip);
+    log_info("  - 调试级别: %s", log_level_to_string(debug_level));
+    log_info("  - DNS服务器: %s", dns_server_ip_conf);
     log_info("  - 配置文件: %s", config_file);
     
     log_info("本版本特性：");
@@ -161,26 +162,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // === 设置上游DNS服务器 ===
-    if (use_custom_dns) {
-        // 如果用户指定了DNS服务器，使用指定的服务器
-        if (set_default_dns_server(dns_server_ip) != MYSUCCESS) {
-            log_error("设置指定的DNS服务器失败");
-            platform_cleanup();
-            cleanup_log_file();
-            return 1;
-        }
-    } else {
-        // 尝试从配置文件加载，失败则使用默认DNS服务器
-        if (upstream_pool_load_from_file(&g_upstream_pool, "upstream_dns.conf") != MYSUCCESS) {
-            log_info("从配置文件加载上游DNS失败，使用默认DNS服务器: %s", dns_server_ip);
-            if (set_default_dns_server(dns_server_ip) != MYSUCCESS) {
-                log_error("设置默认DNS服务器失败");
-                platform_cleanup();
-                cleanup_log_file();
-                return 1;
-            }
-        }
+    // === 初始化上游DNS服务器池 ===
+    if (upstream_pool_init(&g_upstream_pool, dns_server_ip_conf) != MYSUCCESS) {
+        log_error("上游DNS服务器池初始化失败");
+        platform_cleanup();
+        cleanup_log_file();
+        return 1;
     }
 
     // === 启动多线程DNS服务器 ===
