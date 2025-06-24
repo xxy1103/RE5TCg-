@@ -1,6 +1,7 @@
 #include "DNScache/relayBuild.h"
 #include "DNScache/free_stack.h"
 #include "websocket/websocket.h"
+#include "platform/platform.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -34,6 +35,17 @@ unsigned int hash_domain(const char* domain) {
     }
     
     return hash;
+}
+
+/**
+ * @brief 根据域名获取其所属的缓存段
+ */
+dns_cache_segment_t* get_cache_segment(dns_lru_cache_t* cache, const char* domain) {
+    if (!cache || !domain) return NULL;
+    
+    unsigned int hash = hash_domain(domain);
+    // 使用位运算快速取模，前提是段数量为2的幂
+    return &cache->segments[hash & (DNS_CACHE_NUM_SEGMENTS - 1)];
 }
 
 // ============================================================================
@@ -190,26 +202,54 @@ int dns_cache_init(dns_lru_cache_t* cache, int max_size) {
         return MYERROR;
     }
     
-    cache->lru_head = NULL;
-    cache->lru_tail = NULL;
-    cache->current_size = 0;
+    // 初始化内存池锁
+    if (platform_mutex_init(&cache->pool_lock, NULL) != 0) {
+        log_error("内存池锁初始化失败");
+        free_stack_destroy(&cache->free_stack);
+        free(cache->entry_pool);
+        return MYERROR;
+    }
+    
+    // 初始化所有分段
+    int segment_max_size = max_size / DNS_CACHE_NUM_SEGMENTS;
+    if (segment_max_size <= 0) segment_max_size = 1; // 至少每段一个条目
+    
+    for (int i = 0; i < DNS_CACHE_NUM_SEGMENTS; i++) {
+        if (platform_rwlock_init(&cache->segments[i].rwlock, NULL) != 0) {
+            log_error("分段读写锁初始化失败: %d", i);
+            // 清理已初始化的锁
+            for (int j = 0; j < i; j++) {
+                platform_rwlock_destroy(&cache->segments[j].rwlock);
+            }
+            platform_mutex_destroy(&cache->pool_lock);
+            free_stack_destroy(&cache->free_stack);
+            free(cache->entry_pool);
+            return MYERROR;
+        }
+        cache->segments[i].lru_head = NULL;
+        cache->segments[i].lru_tail = NULL;
+        cache->segments[i].current_size = 0;
+        cache->segments[i].max_size = segment_max_size;
+    }
+    
     cache->max_size = max_size;
     cache->cache_hits = 0;
     cache->cache_misses = 0;
     cache->cache_evictions = 0;
     
-    log_info("DNS缓存初始化完成，容量: %d", max_size);
+    log_info("DNS分段式缓存初始化完成，容量: %d, 分段数: %d, 每段容量: %d", 
+             max_size, DNS_CACHE_NUM_SEGMENTS, segment_max_size);
     return MYSUCCESS;
 }
 
 /**
- * @brief 将缓存条目移动到LRU链表头部
+ * @brief 将缓存条目移动到分段LRU链表头部
  */
-void lru_move_to_head(dns_lru_cache_t* cache, dns_cache_entry_t* entry) {
-    if (!cache || !entry) return;
+void lru_move_to_head_segment(dns_cache_segment_t* segment, dns_cache_entry_t* entry) {
+    if (!segment || !entry) return;
     
     // 如果已经是头部，直接返回
-    if (cache->lru_head == entry) return;
+    if (segment->lru_head == entry) return;
     
     // 从当前位置移除
     if (entry->prev) {
@@ -218,31 +258,31 @@ void lru_move_to_head(dns_lru_cache_t* cache, dns_cache_entry_t* entry) {
     if (entry->next) {
         entry->next->prev = entry->prev;
     }
-    if (cache->lru_tail == entry) {
-        cache->lru_tail = entry->prev;
+    if (segment->lru_tail == entry) {
+        segment->lru_tail = entry->prev;
     }
     
     // 插入到头部
     entry->prev = NULL;
-    entry->next = cache->lru_head;
-    if (cache->lru_head) {
-        cache->lru_head->prev = entry;
+    entry->next = segment->lru_head;
+    if (segment->lru_head) {
+        segment->lru_head->prev = entry;
     }
-    cache->lru_head = entry;
+    segment->lru_head = entry;
     
     // 如果链表为空，设置尾部
-    if (!cache->lru_tail) {
-        cache->lru_tail = entry;
+    if (!segment->lru_tail) {
+        segment->lru_tail = entry;
     }
 }
 
 /**
- * @brief 移除LRU链表尾部条目
+ * @brief 移除分段LRU链表尾部条目并返回（不释放内存）
  */
-void lru_remove_tail(dns_lru_cache_t* cache) {
-    if (!cache || !cache->lru_tail) return;
+dns_cache_entry_t* lru_remove_tail_segment(dns_lru_cache_t* cache, dns_cache_segment_t* segment) {
+    if (!cache || !segment || !segment->lru_tail) return NULL;
     
-    dns_cache_entry_t* tail = cache->lru_tail;
+    dns_cache_entry_t* tail = segment->lru_tail;
     
     // 从哈希表中移除
     unsigned int hash_index = hash_domain(tail->domain) % DNS_CACHE_HASH_SIZE;
@@ -262,41 +302,38 @@ void lru_remove_tail(dns_lru_cache_t* cache) {
         current = current->hash_next;
     }
     
-    // 从LRU链表中移除
+    // 从分段LRU链表中移除
     if (tail->prev) {
         tail->prev->next = NULL;
     }
-    cache->lru_tail = tail->prev;
+    segment->lru_tail = tail->prev;
     
-    if (cache->lru_head == tail) {
-        cache->lru_head = NULL;
+    if (segment->lru_head == tail) {
+        segment->lru_head = NULL;
     }
     
-    // 释放DNS响应
-    if (tail->dns_response) {
-        free_dns_entity(tail->dns_response);
-        tail->dns_response = NULL;
-    }
-      // 清零条目（条目池中的内存不需要释放）
-    memset(tail, 0, sizeof(dns_cache_entry_t));
-    
-    // 将索引推回空闲栈
-    int index = tail - cache->entry_pool;
-    if (free_stack_push(&cache->free_stack, index) != 0) {
-        log_error("将条目索引推回空闲栈失败: %d", index);
-    }
-    
-    cache->current_size--;
+    // 减少分段大小
+    segment->current_size--;
     cache->cache_evictions++;
     
-    log_debug("LRU缓存移除尾部条目，当前大小: %d", cache->current_size);
+    log_debug("分段LRU缓存移除尾部条目: %s, 分段当前大小: %d", tail->domain, segment->current_size);
+    return tail;
 }
 
 /**
- * @brief 从缓存获取DNS条目
+ * @brief 从缓存获取DNS条目（分段读写锁版本）
  */
 dns_cache_entry_t* dns_cache_get(dns_lru_cache_t* cache, const char* domain) {
     if (!cache || !domain) return NULL;
+    
+    // 获取对应的分段
+    dns_cache_segment_t* segment = get_cache_segment(cache, domain);
+    if (!segment) return NULL;
+    
+    dns_cache_entry_t* result = NULL;
+    
+    // 获取读锁
+    platform_rwlock_rdlock(&segment->rwlock);
     
     unsigned int hash_index = hash_domain(domain) % DNS_CACHE_HASH_SIZE;
     dns_cache_entry_t* current = cache->hash_table[hash_index];
@@ -308,23 +345,36 @@ dns_cache_entry_t* dns_cache_get(dns_lru_cache_t* cache, const char* domain) {
             if (now > current->expire_time) {
                 log_debug("缓存条目已过期: %s", domain);
                 cache->cache_misses++;
-                return NULL;
+                break; // 过期了，退出循环
             }
             
-            // 更新访问时间并移动到头部
-            current->access_time = now;
-            lru_move_to_head(cache, current);
-            cache->cache_hits++;
+            // 命中了，但需要升级为写锁来更新LRU
+            platform_rwlock_unlock(&segment->rwlock);
+            platform_rwlock_wrlock(&segment->rwlock);
             
-            log_debug("缓存命中: %s", domain);
-            return current;
+            // 再次检查（因为在锁切换期间可能被其他线程修改）
+            if (now <= current->expire_time && strcasecmp(current->domain, domain) == 0) {
+                // 更新访问时间并移动到头部
+                current->access_time = now;
+                lru_move_to_head_segment(segment, current);
+                cache->cache_hits++;
+                result = current;
+                log_debug("缓存命中: %s", domain);
+            } else {
+                cache->cache_misses++;
+            }
+            break;
         }
         current = current->hash_next;
     }
     
-    cache->cache_misses++;
-    log_debug("缓存未命中: %s", domain);
-    return NULL;
+    if (!result) {
+        cache->cache_misses++;
+        log_debug("缓存未命中: %s", domain);
+    }
+    
+    platform_rwlock_unlock(&segment->rwlock);
+    return result;
 }
 
 /**
@@ -348,10 +398,17 @@ static dns_cache_entry_t* dns_cache_find_entry_internal(dns_lru_cache_t* cache, 
 }
 
 /**
- * @brief 向缓存添加DNS条目
+ * @brief 向缓存添加DNS条目（分段读写锁版本）
  */
 int dns_cache_put(dns_lru_cache_t* cache, const char* domain, DNS_ENTITY* response, int ttl) {
     if (!cache || !domain || !response) return MYERROR;
+    
+    // 获取对应的分段
+    dns_cache_segment_t* segment = get_cache_segment(cache, domain);
+    if (!segment) return MYERROR;
+    
+    // 获取写锁
+    platform_rwlock_wrlock(&segment->rwlock);
     
     // 使用内部函数查找，无论是否过期
     dns_cache_entry_t* entry = dns_cache_find_entry_internal(cache, domain);
@@ -368,76 +425,134 @@ int dns_cache_put(dns_lru_cache_t* cache, const char* domain, DNS_ENTITY* respon
         entry->expire_time = time(NULL) + (ttl > 0 ? ttl : DEFAULT_TTL);
         entry->access_time = time(NULL);
         
-        // 3. 因为被更新，所以它是最新的，移动到LRU头部
-        lru_move_to_head(cache, entry);
+        // 3. 因为被更新，所以它是最新的，移动到分段LRU头部
+        lru_move_to_head_segment(segment, entry);
         
+        platform_rwlock_unlock(&segment->rwlock);
         log_debug("原地更新缓存条目: %s", domain);
         return MYSUCCESS;
     }    
+    
     // --- 路径B：完全没找到条目，这是一个全新的域名，执行插入 ---
     log_debug("为新域名创建缓存条目: %s", domain);
     
-    // 如果缓存已满，移除最旧的一个条目
-    if (cache->current_size >= cache->max_size) {
-        lru_remove_tail(cache);
-    }
-      // 查找空闲条目
-    entry = NULL;
-    int free_index = free_stack_pop(&cache->free_stack);
-    if (free_index >= 0) {
-        entry = &cache->entry_pool[free_index];
+    dns_cache_entry_t* evicted_entry = NULL;
+    
+    // 如果分段已满，移除最旧的一个条目
+    if (segment->current_size >= segment->max_size) {
+        evicted_entry = lru_remove_tail_segment(cache, segment);
     }
     
-    if (!entry) {
+    // 释放分段锁，访问全局内存池
+    platform_rwlock_unlock(&segment->rwlock);
+    
+    // --- 访问全局内存池，需要使用 pool_lock ---
+    platform_mutex_lock(&cache->pool_lock);
+    
+    if (evicted_entry) {
+        // 清理被淘汰的条目并释放其DNS响应
+        if (evicted_entry->dns_response) {
+            free_dns_entity(evicted_entry->dns_response);
+            evicted_entry->dns_response = NULL;
+        }
+        memset(evicted_entry, 0, sizeof(dns_cache_entry_t));
+        
+        // 将被淘汰条目的索引推回空闲栈
+        int evicted_index = evicted_entry - cache->entry_pool;
+        free_stack_push(&cache->free_stack, evicted_index);
+    }
+    
+    // 从空闲栈获取新条目
+    int free_index = free_stack_pop(&cache->free_stack);
+    platform_mutex_unlock(&cache->pool_lock);
+    
+    if (free_index < 0) {
         log_error("无法从空闲栈获取缓存条目");
         return MYERROR;
     }
     
+    dns_cache_entry_t* new_entry = &cache->entry_pool[free_index];
+    
     // 填充条目
-    strncpy(entry->domain, domain, MAX_DOMAIN_LENGTH - 1);
-    entry->domain[MAX_DOMAIN_LENGTH - 1] = '\0';
-    entry->dns_response = response; // 直接使用传入的响应
-    entry->expire_time = time(NULL) + (ttl > 0 ? ttl : DEFAULT_TTL);
-    entry->access_time = time(NULL);
+    strncpy(new_entry->domain, domain, MAX_DOMAIN_LENGTH - 1);
+    new_entry->domain[MAX_DOMAIN_LENGTH - 1] = '\0';
+    new_entry->dns_response = response;
+    new_entry->expire_time = time(NULL) + (ttl > 0 ? ttl : DEFAULT_TTL);
+    new_entry->access_time = time(NULL);
+    new_entry->prev = NULL;
+    new_entry->next = NULL;
+    new_entry->hash_next = NULL;
+    
+    // 重新获取分段写锁来插入新条目
+    platform_rwlock_wrlock(&segment->rwlock);
     
     // 插入哈希表
     unsigned int hash_index = hash_domain(domain) % DNS_CACHE_HASH_SIZE;
-    entry->hash_next = cache->hash_table[hash_index];
-    cache->hash_table[hash_index] = entry;
+    new_entry->hash_next = cache->hash_table[hash_index];
+    cache->hash_table[hash_index] = new_entry;
     
-    // 插入LRU链表头部
-    lru_move_to_head(cache, entry);
-    cache->current_size++;
+    // 插入分段LRU链表头部
+    lru_move_to_head_segment(segment, new_entry);
+    segment->current_size++;
     
-    log_debug("添加新缓存条目: %s, TTL: %d, 当前大小: %d", domain, ttl, cache->current_size);
+    platform_rwlock_unlock(&segment->rwlock);
+    
+    log_debug("添加新缓存条目: %s, TTL: %d, 分段当前大小: %d", domain, ttl, segment->current_size);
     return MYSUCCESS;
 }
 
 /**
- * @brief 清理过期的缓存条目
+ * @brief 清理过期的缓存条目（分段版本）
  */
 void dns_cache_cleanup_expired(dns_lru_cache_t* cache) {
     if (!cache) return;
     
     time_t now = time(NULL);
-    int cleaned = 0;
+    int total_cleaned = 0;
     
-    // 从尾部开始清理过期条目
-    dns_cache_entry_t* current = cache->lru_tail;
-    while (current && now > current->expire_time) {
-        dns_cache_entry_t* prev = current->prev;
-        lru_remove_tail(cache);
-        cleaned++;
-        current = prev;
+    // 遍历所有分段进行清理
+    for (int seg = 0; seg < DNS_CACHE_NUM_SEGMENTS; seg++) {
+        dns_cache_segment_t* segment = &cache->segments[seg];
+        int cleaned = 0;
+        
+        platform_rwlock_wrlock(&segment->rwlock); // 需要写锁来清理
+        
+        // 从尾部开始清理过期条目
+        dns_cache_entry_t* current = segment->lru_tail;
+        while (current && now > current->expire_time) {
+            dns_cache_entry_t* prev = current->prev;
+            dns_cache_entry_t* expired = lru_remove_tail_segment(cache, segment);
+            
+            if (expired) {
+                // 释放DNS响应
+                if (expired->dns_response) {
+                    free_dns_entity(expired->dns_response);
+                    expired->dns_response = NULL;
+                }
+                
+                // 清零条目并推回空闲栈
+                memset(expired, 0, sizeof(dns_cache_entry_t));
+                platform_mutex_lock(&cache->pool_lock);
+                int index = expired - cache->entry_pool;
+                free_stack_push(&cache->free_stack, index);
+                platform_mutex_unlock(&cache->pool_lock);
+                
+                cleaned++;
+            }
+            current = prev;
+        }
+        
+        platform_rwlock_unlock(&segment->rwlock);
+        total_cleaned += cleaned;
     }
     
-    if (cleaned > 0) {
-        log_info("清理了 %d 个过期缓存条目", cleaned);
+    if (total_cleaned > 0) {
+        log_info("清理了 %d 个过期缓存条目", total_cleaned);
     }
 }
 
 /**
- * @brief 打印缓存统计信息
+ * @brief 打印缓存统计信息（分段版本）
  */
 void dns_cache_print_stats(dns_lru_cache_t* cache) {
     if (!cache) return;
@@ -448,8 +563,15 @@ void dns_cache_print_stats(dns_lru_cache_t* cache) {
         hit_rate = (double)cache->cache_hits / total_requests * 100.0;
     }
     
-    log_info("=== DNS缓存统计 ===");
-    log_info("当前大小: %d/%d", cache->current_size, cache->max_size);
+    // 计算总的缓存使用量
+    int total_current_size = 0;
+    for (int i = 0; i < DNS_CACHE_NUM_SEGMENTS; i++) {
+        total_current_size += cache->segments[i].current_size;
+    }
+    
+    log_info("=== DNS分段式缓存统计 ===");
+    log_info("当前大小: %d/%d", total_current_size, cache->max_size);
+    log_info("分段数量: %d", DNS_CACHE_NUM_SEGMENTS);
     log_info("缓存命中: %lu", cache->cache_hits);
     log_info("缓存未命中: %lu", cache->cache_misses);
     log_info("缓存驱逐: %lu", cache->cache_evictions);
@@ -457,13 +579,13 @@ void dns_cache_print_stats(dns_lru_cache_t* cache) {
 }
 
 /**
- * @brief 销毁DNS缓存
+ * @brief 销毁DNS缓存（分段版本）
  */
 void dns_cache_destroy(dns_lru_cache_t* cache) {
     if (!cache) return;
     
     // 释放所有DNS响应
-    for (int i = 0; i < cache->max_size; i++) { //ok
+    for (int i = 0; i < cache->max_size; i++) {
         if (cache->entry_pool[i].dns_response) {
             free_dns_entity(cache->entry_pool[i].dns_response);
         }
@@ -478,16 +600,23 @@ void dns_cache_destroy(dns_lru_cache_t* cache) {
     // 销毁空闲栈
     free_stack_destroy(&cache->free_stack);
     
+    // 销毁所有分段的读写锁
+    for (int i = 0; i < DNS_CACHE_NUM_SEGMENTS; i++) {
+        platform_rwlock_destroy(&cache->segments[i].rwlock);
+        cache->segments[i].lru_head = NULL;
+        cache->segments[i].lru_tail = NULL;
+        cache->segments[i].current_size = 0;
+    }
+    
+    // 销毁内存池锁
+    platform_mutex_destroy(&cache->pool_lock);
+    
     // 清零哈希表
-    for (int i = 0; i < DNS_CACHE_HASH_SIZE; i++) { //ok
+    for (int i = 0; i < DNS_CACHE_HASH_SIZE; i++) {
         cache->hash_table[i] = NULL;
     }
     
-    cache->lru_head = NULL;
-    cache->lru_tail = NULL;
-    cache->current_size = 0;
-    
-    log_info("DNS缓存已销毁");
+    log_info("DNS分段式缓存已销毁");
 }
 
 // ============================================================================
@@ -608,7 +737,16 @@ int dns_relay_cache_response(const char* domain, DNS_ENTITY* response) {
  */
 void dns_relay_get_stats(int* domain_count, int* cache_size, unsigned long* cache_hits, unsigned long* cache_misses) {
     if (domain_count) *domain_count = g_domain_table.entry_count;
-    if (cache_size) *cache_size = g_dns_cache.current_size;
+    
+    if (cache_size) {
+        // 计算所有分段的总缓存大小
+        int total_size = 0;
+        for (int i = 0; i < DNS_CACHE_NUM_SEGMENTS; i++) {
+            total_size += g_dns_cache.segments[i].current_size;
+        }
+        *cache_size = total_size;
+    }
+    
     if (cache_hits) *cache_hits = g_dns_cache.cache_hits;
     if (cache_misses) *cache_misses = g_dns_cache.cache_misses;
 }

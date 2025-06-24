@@ -4,6 +4,7 @@
 #include "websocket/datagram.h"
 #include "debug/debug.h"
 #include "DNScache/free_stack.h"
+#include "platform/platform.h"
 #include <time.h>
 #include <string.h>
 
@@ -37,6 +38,7 @@ typedef struct {
 #define DNS_CACHE_SIZE 1000             // 缓存容量
 #define DNS_CACHE_HASH_SIZE 2048        // 哈希表大小
 #define DEFAULT_TTL 300                 // 默认TTL（5分钟）
+#define DNS_CACHE_NUM_SEGMENTS 64       // 分段数量，必须是2的幂
 
 // DNS缓存条目
 typedef struct dns_cache_entry {
@@ -53,17 +55,28 @@ typedef struct dns_cache_entry {
     struct dns_cache_entry* hash_next;
 } dns_cache_entry_t;
 
+// DNS缓存分段结构
+typedef struct {
+    pthread_rwlock_t rwlock;            // 读写锁保护该段
+    dns_cache_entry_t* lru_head;        // 该段的LRU链表头（最新）
+    dns_cache_entry_t* lru_tail;        // 该段的LRU链表尾（最旧）
+    int current_size;                   // 该段当前缓存大小
+    int max_size;                       // 该段最大缓存大小
+} dns_cache_segment_t;
+
 // LRU缓存管理器
 typedef struct {
     dns_cache_entry_t* hash_table[DNS_CACHE_HASH_SIZE];
-    dns_cache_entry_t* lru_head;        // LRU链表头（最新）
-    dns_cache_entry_t* lru_tail;        // LRU链表尾（最旧）
     dns_cache_entry_t* entry_pool;      // 预分配的条目池
     free_stack_t free_stack;            // 空闲条目栈
-    int current_size;                   // 当前缓存大小
+    pthread_mutex_t pool_lock;          // 保护内存池的互斥锁
+    
+    // 分段锁
+    dns_cache_segment_t segments[DNS_CACHE_NUM_SEGMENTS];
+    
     int max_size;                       // 最大缓存大小
     
-    // 统计信息
+    // 统计信息（使用原子操作或单独锁保护）
     unsigned long cache_hits;
     unsigned long cache_misses;
     unsigned long cache_evictions;
@@ -113,8 +126,9 @@ void dns_relay_cleanup(void);
 
 // 内部辅助函数声明
 unsigned int hash_domain(const char* domain);
-void lru_move_to_head(dns_lru_cache_t* cache, dns_cache_entry_t* entry);
-void lru_remove_tail(dns_lru_cache_t* cache);
+dns_cache_segment_t* get_cache_segment(dns_lru_cache_t* cache, const char* domain);
+void lru_move_to_head_segment(dns_cache_segment_t* segment, dns_cache_entry_t* entry);
+dns_cache_entry_t* lru_remove_tail_segment(dns_lru_cache_t* cache, dns_cache_segment_t* segment);
 
 #endif // RELAYBUILD_H
 

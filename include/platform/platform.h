@@ -22,6 +22,20 @@
         void* unused;
     } pthread_condattr_t;
     
+    // Windows读写锁结构体定义
+    typedef struct {
+        pthread_mutex_t mutex;          // 用于保护内部状态的互斥锁
+        pthread_cond_t  readers_cond;   // 等待的读者条件变量
+        pthread_cond_t  writer_cond;    // 等待的写者条件变量
+        unsigned int    readers_active; // 当前活跃的读者数量
+        unsigned int    writers_active; // 当前活跃的写者数量 (0或1)
+        unsigned int    writers_waiting;// 正在等待的写者数量
+    } pthread_rwlock_t;
+    
+    typedef struct {
+        void* unused;
+    } pthread_rwlockattr_t;
+    
     #define THREAD_RETURN_TYPE unsigned int __stdcall
     #define THREAD_RETURN_VALUE 0
 #else
@@ -176,5 +190,45 @@ void platform_sleep_ms(int ms);
  * @return CPU核心数
  */
 int platform_get_cpu_count(void);
+
+// ============================================================================
+// 跨平台读写锁函数声明
+// ============================================================================
+
+/**
+ * @brief 跨平台的读写锁初始化
+ * @param rwlock 读写锁指针
+ * @param attr 属性（可为NULL）
+ * @return 成功返回0，失败返回非0
+ */
+int platform_rwlock_init(pthread_rwlock_t* rwlock, const pthread_rwlockattr_t* attr);
+
+/**
+ * @brief 跨平台的读写锁销毁
+ * @param rwlock 读写锁指针
+ * @return 成功返回0，失败返回非0
+ */
+int platform_rwlock_destroy(pthread_rwlock_t* rwlock);
+
+/**
+ * @brief 跨平台的读写锁读锁定
+ * @param rwlock 读写锁指针
+ * @return 成功返回0，失败返回非0
+ */
+int platform_rwlock_rdlock(pthread_rwlock_t* rwlock);
+
+/**
+ * @brief 跨平台的读写锁写锁定
+ * @param rwlock 读写锁指针
+ * @return 成功返回0，失败返回非0
+ */
+int platform_rwlock_wrlock(pthread_rwlock_t* rwlock);
+
+/**
+ * @brief 跨平台的读写锁解锁
+ * @param rwlock 读写锁指针
+ * @return 成功返回0，失败返回非0
+ */
+int platform_rwlock_unlock(pthread_rwlock_t* rwlock);
 
 #endif // PLATFORM_H

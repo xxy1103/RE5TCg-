@@ -104,6 +104,96 @@ int platform_mutex_unlock(pthread_mutex_t* mutex) {
 #endif
 }
 
+// ============================================================================
+// 跨平台读写锁函数实现
+// ============================================================================
+
+int platform_rwlock_init(pthread_rwlock_t* rwlock, const pthread_rwlockattr_t* attr) {
+    (void)attr; // 忽略属性参数
+#ifdef _WIN32
+    platform_mutex_init(&rwlock->mutex, NULL);
+    platform_cond_init(&rwlock->readers_cond, NULL);
+    platform_cond_init(&rwlock->writer_cond, NULL);
+    rwlock->readers_active = 0;
+    rwlock->writers_active = 0;
+    rwlock->writers_waiting = 0;
+    return 0;
+#else
+    return pthread_rwlock_init(rwlock, attr);
+#endif
+}
+
+int platform_rwlock_destroy(pthread_rwlock_t* rwlock) {
+#ifdef _WIN32
+    platform_mutex_destroy(&rwlock->mutex);
+    platform_cond_destroy(&rwlock->readers_cond);
+    platform_cond_destroy(&rwlock->writer_cond);
+    return 0;
+#else
+    return pthread_rwlock_destroy(rwlock);
+#endif
+}
+
+int platform_rwlock_rdlock(pthread_rwlock_t* rwlock) {
+#ifdef _WIN32
+    platform_mutex_lock(&rwlock->mutex);
+    // 当有写者正在写入或等待时，读者必须等待，以防止写者饥饿
+    while (rwlock->writers_active > 0 || rwlock->writers_waiting > 0) {
+        platform_cond_wait(&rwlock->readers_cond, &rwlock->mutex);
+    }
+    rwlock->readers_active++;
+    platform_mutex_unlock(&rwlock->mutex);
+    return 0;
+#else
+    return pthread_rwlock_rdlock(rwlock);
+#endif
+}
+
+int platform_rwlock_wrlock(pthread_rwlock_t* rwlock) {
+#ifdef _WIN32
+    platform_mutex_lock(&rwlock->mutex);
+    rwlock->writers_waiting++;
+    // 当有读者或写者正在活动时，写者必须等待
+    while (rwlock->readers_active > 0 || rwlock->writers_active > 0) {
+        platform_cond_wait(&rwlock->writer_cond, &rwlock->mutex);
+    }
+    rwlock->writers_waiting--;
+    rwlock->writers_active = 1;
+    platform_mutex_unlock(&rwlock->mutex);
+    return 0;
+#else
+    return pthread_rwlock_wrlock(rwlock);
+#endif
+}
+
+int platform_rwlock_unlock(pthread_rwlock_t* rwlock) {
+#ifdef _WIN32
+    platform_mutex_lock(&rwlock->mutex);
+    if (rwlock->writers_active > 0) {
+        // 写者解锁
+        rwlock->writers_active = 0;
+    } else if (rwlock->readers_active > 0) {
+        // 读者解锁
+        rwlock->readers_active--;
+    }
+
+    // 决定唤醒谁：写者优先策略
+    if (rwlock->writers_waiting > 0) {
+        // 仅当没有活跃读者时，才唤醒一个等待的写者
+        if (rwlock->readers_active == 0) {
+            platform_cond_signal(&rwlock->writer_cond);
+        }
+    } else if (rwlock->readers_active == 0) {
+        // 如果没有写者在等待，并且这是最后一个活跃的读者，就唤醒所有等待的读者
+        platform_cond_broadcast(&rwlock->readers_cond);
+    }
+    platform_mutex_unlock(&rwlock->mutex);
+    return 0;
+#else
+    return pthread_rwlock_unlock(rwlock);
+#endif
+}
+
 int platform_cond_init(pthread_cond_t* cond, const pthread_condattr_t* attr) {
     (void)attr; // 忽略属性参数
 #ifdef _WIN32
