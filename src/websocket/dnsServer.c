@@ -54,7 +54,7 @@ void handle_client_requests(DNS_ENTITY* dns_entity,struct sockaddr_in client_add
     DNS_ENTITY* result;
     switch (response->result_type){
         case QUERY_RESULT_BLOCKED:
-            log_debug("响应来源: 域名被屏蔽 - 返回0.0.0.0");
+            log_debug("响应来源: 域名被屏蔽 - 返回域名不存在");
             result = build_response(dns_entity,"0.0.0.0");
             break;
         case QUERY_RESULT_LOCAL_HIT:
