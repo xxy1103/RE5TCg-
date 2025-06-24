@@ -20,9 +20,17 @@ endif()
 if(MSVC)
     # 对于Visual Studio编译器
     add_compile_options(/W4)
+    # 发布版本优化
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_compile_options(/O2)
+    endif()
 elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     # 对于GCC编译器
     add_compile_options(-Wall -Wextra -pedantic)
+    # 发布版本O3优化
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_compile_options(-O3)
+    endif()
 endif()
 
 # 包含目录
