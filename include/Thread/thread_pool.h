@@ -7,10 +7,10 @@
 #include <time.h>
 
 // 线程池配置常量
-#define DEFAULT_WORKER_THREADS 8        // 默认工作线程数
-#define MAX_WORKER_THREADS 8           // 最大工作线程数
-#define MAX_QUEUE_SIZE 5000             // 任务队列最大容量
-#define QUEUE_TIMEOUT_MS 1000           // 队列操作超时时间（毫秒）
+#define DEFAULT_WORKER_THREADS 31        // 优化：增加默认线程数适应高并发
+#define MAX_WORKER_THREADS 31            // 优化：提高最大线程数上限
+#define MAX_QUEUE_SIZE 20000             // 优化：增大队列容量，减少任务丢弃
+#define QUEUE_TIMEOUT_MS 100             // 优化：减少超时时间，提升响应速度
 
 // 任务类型枚举
 typedef enum {
@@ -67,8 +67,7 @@ typedef struct {
     int worker_count;                   // 工作线程数量
     task_queue_t task_queue;            // 任务队列
     
-    // 全局共享资源保护
-    pthread_mutex_t mapping_table_mutex;    // ID映射表互斥锁
+    // 剩余必要的全局锁（ID映射表已使用分段锁，不再需要全局锁）
     pthread_mutex_t socket_mutex;           // Socket操作互斥锁（可选）
     pthread_mutex_t stats_mutex;            // 统计信息互斥锁
     
@@ -81,7 +80,7 @@ typedef struct {
     thread_pool_stats_t stats;          // 性能统计
       // 全局资源引用
     SOCKET server_socket;               // 服务器Socket引用    
-    dns_mapping_table_t* mapping_table; // ID映射表引用
+    dns_mapping_table_t* mapping_table; // ID映射表引用（已使用分段锁优化）
 } dns_thread_pool_t;
 
 /**

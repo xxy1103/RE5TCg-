@@ -205,10 +205,11 @@ void handle_upstream_responses(DNS_ENTITY* dns_entity,struct sockaddr_in source_
  * @return int 成功返回 MYSUCCESS，失败返回 MYERROR
  */
 int start_dns_proxy_server_threaded() {
-    struct sockaddr_in server_addr; // 服务器地址结构    log_info("=== 启动多线程DNS代理服务器 ===");    
+    struct sockaddr_in server_addr; // 服务器地址结构    
+    log_info("=== 启动多线程DNS代理服务器 ===");    
     
 
-    // === 第二步：初始化映射表 ===
+    // === 第一步：初始化映射表 ===
     init_mapping_table(&g_mapping_table);
     log_debug("初始化映射表 (最大并发请求数: %d)", MAX_CONCURRENT_REQUESTS);
 
@@ -270,9 +271,6 @@ int start_dns_proxy_server_threaded() {
         closesocket(server_socket);
         return MYERROR;
     }
-
-    log_info("多线程DNS代理服务器启动成功！");
-    log_info("监听端口: %d, 工作线程数: %d", DNS_PORT, g_dns_thread_pool.worker_count);
 
     // === 第八步：主I/O事件循环 ===
     /*
@@ -349,7 +347,10 @@ int start_dns_proxy_server_threaded() {
     // 清理DNS上游服务器池
     upstream_pool_destroy(&g_upstream_pool);
     log_debug("DNS上游服务器池已清理");
-    
+
+    // 清理DNS缓存
+    dns_cache_destroy();
+
     // 关闭服务器socket
     closesocket(server_socket);
     
@@ -427,7 +428,7 @@ int handle_receive_threaded() {
             return MYERROR;
         }
     }
-
+    
     return MYSUCCESS;
 }
 

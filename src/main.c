@@ -1,17 +1,16 @@
 #include "platform/platform.h"
-// 引入自定义 WebSocket 头文件，包含网络相关函数和结构体
-#include "websocket/websocket.h" 
-// 引入自定义数据报头文件，包含 DNS 数据报解析结构体和函数
-#include "websocket/datagram.h" 
-#include "websocket/dnsServer.h" // 包含 DNS 服务器核心处理函数
+#include "websocket/websocket.h"
+#include "websocket/datagram.h"
+#include "websocket/dnsServer.h"
+#include "debug/debug.h"
+#include "DNScache/relayBuild.h"
 
-#include <stdio.h>    // 包含标准输入输出头文件
-#include <time.h>     // 包含时间相关的头文件，用于获取当前时间等操作
-#include <string.h>   // 包含字符串处理函数
-#include <stdlib.h>   // 包含内存管理函数
-#include "debug/debug.h"   // 包含调试相关的头文件
+#include <stdio.h>
+#include <time.h>
+#include <string.h>
+#include <stdlib.h>
 
-#include "DNScache/relayBuild.h" // 包含DNS中继核心功能
+
 
 /**
  * @brief 打印程序使用帮助信息
@@ -51,7 +50,7 @@ LogLevel string_to_log_level(const char* level_str) {
     if (!level_str) {
         return LOG_LEVEL_INFO;  // 默认级别
     }
-    
+
     if (strcmp(level_str, "error") == 0) {
         return LOG_LEVEL_ERROR;
     } else if (strcmp(level_str, "warn") == 0) {
@@ -65,10 +64,6 @@ LogLevel string_to_log_level(const char* level_str) {
     }
 }
 
-
-// 外部全局变量，在websocket.c中定义
-extern upstream_dns_pool_t g_upstream_pool;
-
 /**
  * @brief 程序主入口点
  * 
@@ -80,6 +75,7 @@ extern upstream_dns_pool_t g_upstream_pool;
  * @return int 成功返回 0，失败返回 1
  */
 int main(int argc, char* argv[]) {
+    
     // === 参数解析变量 ===
     LogLevel debug_level = LOG_LEVEL_INFO;  // 默认日志级别为info
     const char* dns_server_ip_conf = "upstream_dns.conf";  // 默认DNS服务器配置文件
@@ -98,7 +94,7 @@ int main(int argc, char* argv[]) {
                 log_info("设置日志级别为: %s", log_level_to_string(debug_level));
                 arg_index++;
             } else {
-                // 如果没有指定级别，默认使用info
+                
                 debug_level = LOG_LEVEL_INFO;
                 log_info("使用默认日志级别: %s", log_level_to_string(debug_level));
             }
@@ -115,8 +111,8 @@ int main(int argc, char* argv[]) {
             }
         }
         else if (strcmp(argv[arg_index], "-r") == 0) {
-            // 假设是配置文件路径
-            config_file = argv[arg_index];
+            
+            config_file = argv[arg_index + 1];
             log_info("指定配置文件: %s", config_file);
         }
         arg_index++;
@@ -134,7 +130,7 @@ int main(int argc, char* argv[]) {
     
     // === 初始化日志系统 ===
     init_log_file();
-    set_log_level(debug_level);
+    set_log_level(debug_level); //设置日志等级
     
     log_info("=== DNS中继服务器启动 ===");
     log_info("程序版本: 多线程高性能版本");
@@ -154,9 +150,9 @@ int main(int argc, char* argv[]) {
     // === 初始化平台资源 ===
     platform_init();
     
-    // === 初始化DNS中继服务 ===
+    // === 初始化本地域名表 ===
     if (dns_relay_init(config_file) != MYSUCCESS) {
-        log_error("DNS中继服务初始化失败");
+        log_error("本地域名表初始化失败");
         platform_cleanup();
         cleanup_log_file();
         return 1;

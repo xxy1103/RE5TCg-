@@ -28,9 +28,9 @@ void set_log_level(LogLevel level) {
 }
 
 // 初始化日志文件
-void init_log_file(void) {
+void init_log_file(void) {  
     if (log_file == NULL) {
-        log_file = fopen(LOG_FILE_PATH, "w");
+        log_file = fopen(LOG_FILE_PATH, "w"); //以写入模式打开日志文件
         if (log_file == NULL) {
             fprintf(stderr, "Error: Cannot open log file %s\n", LOG_FILE_PATH);
         }
@@ -86,4 +86,3 @@ void write_log_to_file(LogLevel level, const char* file, int line, const char* f
     // 强制刷新缓冲区以确保日志立即写入
     fflush(output);
 }
-

@@ -241,7 +241,7 @@ int domain_table_load_from_file(const char* filename) {
 }
 
 /**
- * @brief 查找域名表条目（分段读写锁版本，支持查询类型）
+ * @brief 查找域名表条目（分段读写锁，支持查询类型）
  */
 ip_address_entry_t* domain_table_lookup(const char* domain, unsigned short qtype) {
     if (!domain) return NULL;
@@ -284,7 +284,7 @@ ip_address_entry_t* domain_table_lookup(const char* domain, unsigned short qtype
 }
 
 /**
- * @brief 销毁域名表（分段版本，支持IP链表）
+ * @brief 销毁域名表（分段，支持IP链表）
  */
 void domain_table_destroy() {
     // 释放所有分段的内容并销毁锁

@@ -14,8 +14,8 @@
 
 #define MAX_DOMAIN_LENGTH 256
 #define MAX_IP_LENGTH 46                // 扩展以支持IPv6地址
-#define DOMAIN_TABLE_HASH_SIZE 4096
-#define DOMAIN_TABLE_NUM_SEGMENTS 64    // 域名表分段数量，必须是2的幂
+#define DOMAIN_TABLE_HASH_SIZE 16384     // 优化：16K哈希桶，平衡内存和性能
+#define DOMAIN_TABLE_NUM_SEGMENTS 64     // 优化：64个分段，适合多核CPU
 
 // IP地址条目，支持IPv4和IPv6
 typedef struct ip_address_entry {
@@ -39,7 +39,7 @@ typedef struct {
     int entry_count;                    // 该段的条目数量
 } domain_table_segment_t;
 
-// 本地域名表（分段版本）
+// 本地域名表
 typedef struct {
     domain_table_segment_t segments[DOMAIN_TABLE_NUM_SEGMENTS]; // 分段数组
     int total_entry_count;              // 总条目数量
@@ -50,10 +50,10 @@ typedef struct {
 // LRU缓存相关定义
 // ============================================================================
 
-#define DNS_CACHE_SIZE 1000             // 缓存容量
-#define DNS_CACHE_HASH_SIZE 2048        // 哈希表大小
+#define DNS_CACHE_SIZE 20000             // 缓存容量（优化：增加到2万，提升命中率）
+#define DNS_CACHE_HASH_SIZE 32768        // 哈希表大小（优化：32K，平衡内存和冲突率）
 #define DEFAULT_TTL 300                 // 默认TTL（5分钟）
-#define DNS_CACHE_NUM_SEGMENTS 64       // 分段数量，必须是2的幂
+#define DNS_CACHE_NUM_SEGMENTS 128       // 分段数量，必须是2的幂（优化：128段，减少锁争用）
 #define MAX_CACHE_KEY_LENGTH (MAX_DOMAIN_LENGTH + 10) // 缓存键最大长度 "domain:TYPE"
 
 // DNS缓存条目

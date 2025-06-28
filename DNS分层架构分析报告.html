@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNS服务器分层架构分析报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script>
+        // 备用CDN加载
+        if (typeof mermaid === 'undefined') {
+            console.warn('主CDN加载失败，尝试备用CDN...');
+            var script = document.createElement('script');
+            script.src = 'https://unpkg.com/mermaid@10.9.1/dist/mermaid.min.js';
+            document.head.appendChild(script);
+        }
+    </script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #2980b9;
+            margin-top: 20px;
+        }
+        .layer-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+        }
+        .layer-header {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .feature-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .feature-list li {
+            background: #e8f4fd;
+            margin: 5px 0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border-left: 3px solid #3498db;
+        }
+        .code-snippet {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .mermaid {
+            text-align: center;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        .mermaid svg {
+            max-width: 100%;
+            height: auto;
+        }
+        /* 加载动画 */
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .mermaid-loading {
+            background: #f8f9fa;
+            border: 2px dashed #bdc3c7;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        /* 确保Mermaid节点样式 */
+        .mermaid .node rect,
+        .mermaid .node circle,
+        .mermaid .node ellipse,
+        .mermaid .node polygon {
+            fill: #3498db;
+            stroke: #2980b9;
+            stroke-width: 2px;
+        }
+        .mermaid .node text {
+            fill: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .architecture-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .architecture-table th,
+        .architecture-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .architecture-table th {
+            background-color: #3498db;
+            color: white;
+        }
+        .architecture-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .tech-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-item {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 DNS服务器分层架构分析报告</h1>
+        
+        <div class="highlight">
+            <strong>项目概述：</strong>这是一个高性能、多线程的DNS中继服务器，采用分层架构设计，支持域名解析、缓存机制、负载均衡和不良网站拦截功能。
+        </div>
+
+        <h2>📊 系统分层架构图</h2>
+        <div class="mermaid" id="architecture-diagram">
+            graph TB
+                subgraph ClientLayer["1. 客户端层"]
+                    Client["DNS客户端请求"]
+                end
+                
+                subgraph AppLayer["2. 应用层"]
+                    App["程序入口 & 配置管理"]
+                end
+                
+                subgraph ServiceLayer["3. 服务层"]
+                    Service["多线程服务器 & 任务队列"]
+                end
+                
+                subgraph BusinessLayer["4. 业务逻辑层"]
+                    Business["DNS缓存 & ID映射 & 本地域名表"]
+                end
+                
+                subgraph NetworkLayer["5. 网络层"]
+                    Network["网络通信 & DNS协议处理"]
+                end
+                
+                subgraph PlatformLayer["6. 平台抽象层"]
+                    Platform["跨平台兼容 & 线程/Socket抽象"]
+                end
+                
+                subgraph InfraLayer["7. 基础设施层"]
+                    Infra["日志系统 & 内存管理"]
+                end
+                
+                subgraph UpstreamLayer["上游服务"]
+                    Upstream["上游DNS服务器池"]
+                end
+
+                Client --> App
+                App --> Service
+                Service --> Business
+                Business --> Network
+                Network --> Platform
+                Platform --> Infra
+                Network --> Upstream
+                
+                classDef layerStyle fill:#e8f4fd,stroke:#2980b9,stroke-width:3px,color:#2c3e50
+                classDef upstreamStyle fill:#fff3cd,stroke:#e67e22,stroke-width:2px,color:#d35400
+                
+                class Client,App,Service,Business,Network,Platform,Infra layerStyle
+                class Upstream upstreamStyle
+        </div>
+
+        <h2>🏗️ 详细分层说明</h2>
+
+        <div class="layer-section">
+            <div class="layer-header">第1层：客户端层</div>
+            <p><strong>功能：</strong>接收DNS客户端的域名解析请求，监听UDP 53端口</p>
+        </div>
+
+        <div class="layer-section">
+            <div class="layer-header">第2层：应用层</div>
+            <p><strong>功能：</strong>程序入口点，负责系统初始化、配置管理和程序生命周期控制</p>
+        </div>
+
+        <div class="layer-section">
+            <div class="layer-header">第3层：服务层</div>
+            <p><strong>功能：</strong>高并发请求处理，采用多线程架构和任务队列机制</p>
+        </div>
+
+        <div class="layer-section">
+            <div class="layer-header">第4层：业务逻辑层</div>
+            <p><strong>功能：</strong>DNS核心业务处理，包括缓存管理、ID映射和本地域名表查询</p>
+        </div>
+
+        <div class="layer-section">
+            <div class="layer-header">第5层：网络层</div>
+            <p><strong>功能：</strong>网络通信和DNS协议处理，负载均衡和上游服务器管理</p>
+        </div>
+
+        <div class="layer-section">
+            <div class="layer-header">第6层：平台抽象层</div>
+            <p><strong>功能：</strong>跨平台兼容性支持，统一Windows/Linux的API接口</p>
+        </div>
+
+        <div class="layer-section">
+            <div class="layer-header">第7层：基础设施层</div>
+            <p><strong>功能：</strong>系统基础服务，包括日志记录和内存管理</p>
+        </div>
+
+        <div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #17a2b8;">
+            <h3 style="color: #17a2b8; margin-top: 0;">💡 详细技术实现</h3>
+            <p style="color: #6c757d;">点击下方按钮查看各层的详细技术实现和代码示例</p>
+            <button onclick="toggleDetails()" style="background: #17a2b8; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                显示/隐藏详细实现
+            </button>
+        </div>
+
+        <div id="detailed-implementation" style="display: none;">
+            <h3>📋 详细分层实现</h3>
+            
+            <div class="layer-section">
+                <div class="layer-header">应用层 - 详细实现</div>
+                <p><strong>核心文件：</strong><code>src/main.c</code></p>
+                <ul class="feature-list">
+                    <li>命令行参数解析（-h帮助, -d日志级别, -c配置文件, -r域名表）</li>
+                    <li>系统初始化（平台资源、日志系统、域名表、上游服务器池）</li>
+                    <li>配置文件验证和加载</li>
+                    <li>程序生命周期管理</li>
+                </ul>
+                <div class="code-snippet">
+// 主要初始化流程
+platform_init();                    // 初始化平台资源
+dns_relay_init(config_file);         // 初始化本地域名表
+upstream_pool_init(&g_upstream_pool, dns_server_ip_conf); // 初始化上游DNS池
+start_dns_proxy_server_threaded();  // 启动多线程DNS服务器
+                </div>
+            </div>
+
+            <div class="layer-section">
+                <div class="layer-header">服务层 - 详细实现</div>
+                <p><strong>核心文件：</strong><code>src/websocket/dnsServer.c</code>, <code>src/Thread/thread_pool.c</code></p>
+                <ul class="feature-list">
+                    <li>多线程DNS代理服务器 (默认16个工作线程)</li>
+                    <li>基于生产者-消费者模式的任务队列 (最大10000个任务)</li>
+                    <li>任务类型分类：客户端请求、上游响应、关闭信号</li>
+                    <li>线程池状态监控和统计</li>
+                    <li>优雅关闭机制</li>
+                </ul>
+                <div class="code-snippet">
+// 线程池配置
+#define DEFAULT_WORKER_THREADS 16    // 默认工作线程数
+#define MAX_QUEUE_SIZE 10000         // 任务队列最大容量
+#define QUEUE_TIMEOUT_MS 500         // 队列操作超时时间
+
+// 任务类型
+typedef enum {
+    TASK_CLIENT_REQUEST,    // 客户端DNS请求
+    TASK_UPSTREAM_RESPONSE, // 上游服务器响应
+    TASK_SHUTDOWN          // 关闭信号
+} task_type_t;
+                </div>
+            </div>
+
+            <div class="layer-section">
+                <div class="layer-header">业务逻辑层 - 详细实现</div>
+                <p><strong>核心文件：</strong><code>src/DNScache/relayBuild.c</code>, <code>src/idmapping/idmapping.c</code></p>
+                
+                <h4>🗃️ DNS缓存子系统</h4>
+                <ul class="feature-list">
+                    <li>LRU缓存机制 (容量1000条记录)</li>
+                    <li>分段锁设计 (64个段，减少锁竞争)</li>
+                    <li>本地域名表管理 (支持8192个哈希桶，128个分段)</li>
+                    <li>不良网站拦截 (0.0.0.0标记)</li>
+                    <li>TTL过期管理</li>
+                </ul>
+                
+                <h4>🔄 ID映射子系统</h4>
+                <ul class="feature-list">
+                    <li>客户端请求ID与上游请求ID映射</li>
+                    <li>哈希表快速查找 (16384个桶)</li>
+                    <li>预分配内存池 (最大10000个并发请求)</li>
+                    <li>请求超时清理 (3秒超时)</li>
+                </ul>
+                
+                <div class="code-snippet">
+// 查询结果类型
+typedef enum {
+    QUERY_RESULT_BLOCKED,     // 域名被阻止
+    QUERY_RESULT_LOCAL_HIT,   // 本地表命中
+    QUERY_RESULT_CACHE_HIT,   // 缓存命中
+    QUERY_RESULT_CACHE_MISS,  // 缓存未命中，需要上游查询
+    QUERY_RESULT_ERROR        // 查询错误
+} dns_query_result_t;
+                </div>
+            </div>
+
+            <div class="layer-section">
+                <div class="layer-header">网络层 - 详细实现</div>
+                <p><strong>核心文件：</strong><code>src/websocket/websocket.c</code>, <code>src/websocket/datagram.c</code></p>
+                
+                <h4>🌐 网络通信模块</h4>
+                <ul class="feature-list">
+                    <li>上游DNS服务器池管理 (最大10个服务器)</li>
+                    <li>负载均衡策略：随机选择和轮询</li>
+                    <li>配置文件动态加载</li>
+                    <li>网络错误处理和重试机制</li>
+                </ul>
+                
+                <h4>📦 DNS报文处理模块</h4>
+                <ul class="feature-list">
+                    <li>DNS协议报文解析和序列化</li>
+                    <li>支持A、AAAA、CNAME、MX记录类型</li>
+                    <li>DNS压缩格式处理</li>
+                    <li>域名格式转换 (标准格式 ↔ DNS格式)</li>
+                </ul>
+                
+                <div class="code-snippet">
+// DNS报文结构
+typedef struct DNS_ENTITY{
+    unsigned short id;       // 事务ID
+    unsigned short flags;    // 标志位
+    unsigned short qdcount;  // 问题数
+    unsigned short ancount;  // 回答数
+    unsigned short nscount;  // 授权回答数
+    unsigned short arcount;  // 附加回答数
+    DNS_QUESTION_ENTITY* questions; // 问题部分
+    R_DATA_ENTITY* answers;         // 回答部分
+    R_DATA_ENTITY* authorities;     // 权威记录部分
+    R_DATA_ENTITY* additionals;     // 附加记录部分
+} DNS_ENTITY;
+                </div>
+            </div>
+
+            <div class="layer-section">
+                <div class="layer-header">平台抽象层 - 详细实现</div>
+                <p><strong>核心文件：</strong><code>src/platform/platform.c</code></p>
+                <ul class="feature-list">
+                    <li>Windows和Linux平台统一API</li>
+                    <li>线程API抽象 (pthread在Windows上的实现)</li>
+                    <li>Socket API统一接口</li>
+                    <li>读写锁实现 (Windows平台自定义实现)</li>
+                    <li>条件变量和互斥锁抽象</li>
+                </ul>
+                <div class="code-snippet">
+// 跨平台线程类型定义 (Windows)
+typedef HANDLE pthread_t;
+typedef CRITICAL_SECTION pthread_mutex_t;
+typedef CONDITION_VARIABLE pthread_cond_t;
+
+// 统一的API接口
+int platform_mutex_init(pthread_mutex_t* mutex, const pthread_mutexattr_t* attr);
+int platform_thread_create(pthread_t* thread, const pthread_attr_t* attr, 
+                          THREAD_RETURN_TYPE (*start_routine)(void*), void* arg);
+                </div>
+            </div>
+
+            <div class="layer-section">
+                <div class="layer-header">基础设施层 - 详细实现</div>
+                <p><strong>核心文件：</strong><code>src/debug/debug.c</code>, <code>src/DNScache/free_stack.c</code></p>
+                
+                <h4>📝 日志系统</h4>
+                <ul class="feature-list">
+                    <li>多级别日志 (ERROR, WARN, INFO, DEBUG)</li>
+                    <li>文件日志记录</li>
+                    <li>运行时日志级别调整</li>
+                    <li>带时间戳和位置信息的日志格式</li>
+                </ul>
+                
+                <h4>🧠 内存管理</h4>
+                <ul class="feature-list">
+                    <li>空闲内存栈管理</li>
+                    <li>内存池预分配</li>
+                    <li>高效的内存分配和回收</li>
+                </ul>
+            </div>
+        </div>
+
+        <script>
+            function toggleDetails() {
+                const details = document.getElementById('detailed-implementation');
+                if (details.style.display === 'none') {
+                    details.style.display = 'block';
+                } else {
+                    details.style.display = 'none';
+                }
+            }
+        </script>
+
+        <h2>📈 技术栈和性能特性</h2>
+        
+        <div class="tech-stack">
+            <div class="tech-item">
+                <h3>编程语言</h3>
+                <p>C99标准</p>
+            </div>
+            <div class="tech-item">
+                <h3>构建工具</h3>
+                <p>CMake 3.10+</p>
+            </div>
+            <div class="tech-item">
+                <h3>网络协议</h3>
+                <p>UDP/DNS协议</p>
+            </div>
+            <div class="tech-item">
+                <h3>并发模型</h3>
+                <p>多线程+任务队列</p>
+            </div>
+            <div class="tech-item">
+                <h3>平台支持</h3>
+                <p>Windows/Linux</p>
+            </div>
+            <div class="tech-item">
+                <h3>缓存策略</h3>
+                <p>LRU算法</p>
+            </div>
+        </div>
+
+        <h2>⚡ 性能指标</h2>
+        
+        <div class="performance-metrics">
+            <div class="metric-item">
+                <div class="metric-value">16</div>
+                <div>工作线程数</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">10K</div>
+                <div>最大并发请求</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">1000</div>
+                <div>缓存容量</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">64</div>
+                <div>缓存分段数</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">3s</div>
+                <div>请求超时时间</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">10</div>
+                <div>上游服务器池大小</div>
+            </div>
+        </div>
+
+        <h2>🔧 架构设计优势</h2>
+
+        <table class="architecture-table">
+            <thead>
+                <tr>
+                    <th>设计特性</th>
+                    <th>技术实现</th>
+                    <th>性能优势</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>分层架构</td>
+                    <td>7层清晰分离，职责明确</td>
+                    <td>易于维护、扩展和测试</td>
+                </tr>
+                <tr>
+                    <td>多线程并发</td>
+                    <td>生产者-消费者模式，16个工作线程</td>
+                    <td>高并发处理能力，支持10K并发请求</td>
+                </tr>
+                <tr>
+                    <td>分段锁机制</td>
+                    <td>缓存和域名表采用64/128个分段</td>
+                    <td>减少锁竞争，提高并发性能</td>
+                </tr>
+                <tr>
+                    <td>内存池管理</td>
+                    <td>预分配+空闲栈管理</td>
+                    <td>减少内存分配开销，避免内存碎片</td>
+                </tr>
+                <tr>
+                    <td>LRU缓存</td>
+                    <td>哈希表+双向链表实现</td>
+                    <td>O(1)缓存访问，自动淘汰过期数据</td>
+                </tr>
+                <tr>
+                    <td>负载均衡</td>
+                    <td>上游服务器池+轮询/随机策略</td>
+                    <td>分散负载，提高可靠性</td>
+                </tr>
+                <tr>
+                    <td>跨平台支持</td>
+                    <td>平台抽象层统一API</td>
+                    <td>Windows/Linux无缝兼容</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>📊 数据流处理流程</h2>
+        
+        <div class="mermaid" id="dataflow-diagram">
+            sequenceDiagram
+                participant Client as DNS客户端
+                participant Server as DNS服务器
+                participant ThreadPool as 线程池
+                participant Cache as 缓存系统
+                participant LocalTable as 本地域名表
+                participant IDMapping as ID映射
+                participant Upstream as 上游DNS
+                
+                Client->>Server: DNS查询请求
+                Server->>ThreadPool: 提交客户端任务
+                ThreadPool->>LocalTable: 检查本地域名表
+                
+                alt 本地表命中阻止域名
+                    LocalTable-->>ThreadPool: 返回阻止响应
+                    ThreadPool-->>Client: 阻止访问
+                else 本地表命中正常域名
+                    LocalTable-->>ThreadPool: 返回本地IP
+                    ThreadPool-->>Client: 返回本地解析结果
+                else 本地表未命中
+                    ThreadPool->>Cache: 检查缓存
+                    alt 缓存命中
+                        Cache-->>ThreadPool: 返回缓存结果
+                        ThreadPool-->>Client: 返回缓存数据
+                    else 缓存未命中
+                        ThreadPool->>IDMapping: 分配新ID
+                        IDMapping-->>ThreadPool: 返回映射ID
+                        ThreadPool->>Upstream: 转发到上游DNS
+                        Upstream-->>ThreadPool: 上游响应
+                        ThreadPool->>IDMapping: 查找原始客户端
+                        ThreadPool->>Cache: 缓存响应结果
+                        ThreadPool-->>Client: 返回解析结果
+                    end
+                end
+        </div>
+
+        <h2>🎯 总结</h2>
+        
+        <div class="highlight">
+            <p>该DNS服务器采用了经典的<strong>7层分层架构</strong>设计，从上到下分别是：客户端层、应用层、服务层、业务逻辑层、网络层、平台抽象层和基础设施层。</p>
+            
+            <p><strong>核心设计理念：</strong></p>
+            <ul>
+                <li><strong>高性能：</strong>多线程并发 + 分段锁 + 内存池 + LRU缓存</li>
+                <li><strong>高可靠：</strong>负载均衡 + 错误处理 + 优雅关闭</li>
+                <li><strong>易维护：</strong>分层架构 + 模块化设计 + 统一接口</li>
+                <li><strong>跨平台：</strong>平台抽象层实现Windows/Linux兼容</li>
+            </ul>
+            
+            <p>这种架构设计使得系统具备了<strong>高并发处理能力</strong>（支持10K并发）、<strong>低延迟响应</strong>（多级缓存）和<strong>良好的扩展性</strong>（模块化设计），是一个工程化程度很高的DNS服务器实现。</p>
+        </div>
+
+        <hr>
+        <p style="text-align: center; color: #7f8c8d; margin-top: 30px;">
+            <small>📅 生成时间：2025年6月28日 | 🔧 基于DNS服务器项目源码分析</small>
+        </p>
+    </div>
+
+    <script>
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM加载完成，开始初始化Mermaid...');
+            
+            // 检查Mermaid是否成功加载
+            if (typeof mermaid === 'undefined') {
+                console.error('Mermaid未加载！');
+                // 显示错误信息
+                document.querySelectorAll('.mermaid').forEach(function(element) {
+                    element.innerHTML = '<div class="mermaid-loading">⚠️ Mermaid图表加载失败，请检查网络连接</div>';
+                });
+                return;
+            }
+
+            try {
+                // 配置Mermaid
+                mermaid.initialize({
+                    startOnLoad: false, // 手动控制初始化
+                    theme: 'default',
+                    themeVariables: {
+                        primaryColor: '#3498db',
+                        primaryTextColor: '#2c3e50',
+                        primaryBorderColor: '#2980b9',
+                        lineColor: '#34495e',
+                        secondaryColor: '#ecf0f1',
+                        tertiaryColor: '#f8f9fa',
+                        background: '#ffffff',
+                        mainBkg: '#3498db',
+                        secondBkg: '#ecf0f1',
+                        tertiaryColor: '#f8f9fa'
+                    },
+                    flowchart: {
+                        useMaxWidth: true,
+                        htmlLabels: true,
+                        curve: 'basis',
+                        padding: 20
+                    },
+                    sequence: {
+                        useMaxWidth: true,
+                        wrap: true,
+                        diagramMarginX: 50,
+                        diagramMarginY: 10,
+                        boxTextMargin: 5,
+                        noteMargin: 10,
+                        messageMargin: 35,
+                        mirrorActors: true
+                    },
+                    gitgraph: {
+                        useMaxWidth: true
+                    }
+                });
+
+                console.log('Mermaid配置完成，开始渲染图表...');
+
+                // 手动初始化所有图表
+                mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                
+                console.log('Mermaid图表渲染完成');
+
+            } catch (error) {
+                console.error('Mermaid初始化错误:', error);
+                
+                // 显示错误信息
+                document.querySelectorAll('.mermaid').forEach(function(element) {
+                    element.innerHTML = '<div class="mermaid-loading">❌ 图表渲染出错: ' + error.message + '</div>';
+                });
+            }
+
+            // 错误处理
+            window.addEventListener('error', function(e) {
+                if (e.message.includes('mermaid')) {
+                    console.error('Mermaid运行时错误:', e.message);
+                }
+            });
+
+            // 备用渲染（延迟执行）
+            setTimeout(function() {
+                try {
+                    // 检查是否有未渲染的图表
+                    const unrenderedElements = document.querySelectorAll('.mermaid:not([data-processed="true"])');
+                    if (unrenderedElements.length > 0) {
+                        console.log('发现未渲染的图表，尝试重新渲染...');
+                        mermaid.init(undefined, unrenderedElements);
+                    }
+                } catch (e) {
+                    console.warn('备用渲染失败:', e);
+                }
+            }, 2000);
+        });
+
+        // 页面加载完成后的额外检查
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                // 最终检查
+                const mermaidElements = document.querySelectorAll('.mermaid');
+                let successCount = 0;
+                
+                mermaidElements.forEach(function(element) {
+                    if (element.querySelector('svg')) {
+                        successCount++;
+                    } else {
+                        console.warn('图表可能未正确渲染:', element.id || element.className);
+                    }
+                });
+                
+                console.log(`成功渲染 ${successCount}/${mermaidElements.length} 个图表`);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

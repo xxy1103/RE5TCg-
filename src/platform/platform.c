@@ -4,6 +4,7 @@
 
 #ifdef _WIN32
 #include <time.h>
+#include <sys/timeb.h>  // 为_ftime函数添加头文件
 #else
 #include <sys/time.h>
 #include <errno.h>
@@ -64,175 +65,81 @@ int platform_get_last_error() {
 }
 
 // ============================================================================
-// 跨平台线程函数实现
+// 跨平台线程函数实现 - 现在Windows下也使用mingw64 pthread
 // ============================================================================
 
 int platform_mutex_init(pthread_mutex_t* mutex, const pthread_mutexattr_t* attr) {
-    (void)attr; // 忽略属性参数
-#ifdef _WIN32
-    InitializeCriticalSection(mutex);
-    return 0;
-#else
     return pthread_mutex_init(mutex, attr);
-#endif
 }
 
 int platform_mutex_destroy(pthread_mutex_t* mutex) {
-#ifdef _WIN32
-    DeleteCriticalSection(mutex);
-    return 0;
-#else
     return pthread_mutex_destroy(mutex);
-#endif
 }
 
 int platform_mutex_lock(pthread_mutex_t* mutex) {
-#ifdef _WIN32
-    EnterCriticalSection(mutex);
-    return 0;
-#else
     return pthread_mutex_lock(mutex);
-#endif
 }
 
 int platform_mutex_unlock(pthread_mutex_t* mutex) {
-#ifdef _WIN32
-    LeaveCriticalSection(mutex);
-    return 0;
-#else
     return pthread_mutex_unlock(mutex);
-#endif
 }
 
 // ============================================================================
-// 跨平台读写锁函数实现
+// 跨平台读写锁函数实现 - 现在Windows下也使用mingw64 pthread
 // ============================================================================
 
 int platform_rwlock_init(pthread_rwlock_t* rwlock, const pthread_rwlockattr_t* attr) {
-    (void)attr; // 忽略属性参数
-#ifdef _WIN32
-    platform_mutex_init(&rwlock->mutex, NULL);
-    platform_cond_init(&rwlock->readers_cond, NULL);
-    platform_cond_init(&rwlock->writer_cond, NULL);
-    rwlock->readers_active = 0;
-    rwlock->writers_active = 0;
-    rwlock->writers_waiting = 0;
-    return 0;
-#else
     return pthread_rwlock_init(rwlock, attr);
-#endif
 }
 
 int platform_rwlock_destroy(pthread_rwlock_t* rwlock) {
-#ifdef _WIN32
-    platform_mutex_destroy(&rwlock->mutex);
-    platform_cond_destroy(&rwlock->readers_cond);
-    platform_cond_destroy(&rwlock->writer_cond);
-    return 0;
-#else
     return pthread_rwlock_destroy(rwlock);
-#endif
 }
 
 int platform_rwlock_rdlock(pthread_rwlock_t* rwlock) {
-#ifdef _WIN32
-    platform_mutex_lock(&rwlock->mutex);
-    // 当有写者正在写入或等待时，读者必须等待，以防止写者饥饿
-    while (rwlock->writers_active > 0 || rwlock->writers_waiting > 0) {
-        platform_cond_wait(&rwlock->readers_cond, &rwlock->mutex);
-    }
-    rwlock->readers_active++;
-    platform_mutex_unlock(&rwlock->mutex);
-    return 0;
-#else
     return pthread_rwlock_rdlock(rwlock);
-#endif
 }
 
 int platform_rwlock_wrlock(pthread_rwlock_t* rwlock) {
-#ifdef _WIN32
-    platform_mutex_lock(&rwlock->mutex);
-    rwlock->writers_waiting++;
-    // 当有读者或写者正在活动时，写者必须等待
-    while (rwlock->readers_active > 0 || rwlock->writers_active > 0) {
-        platform_cond_wait(&rwlock->writer_cond, &rwlock->mutex);
-    }
-    rwlock->writers_waiting--;
-    rwlock->writers_active = 1;
-    platform_mutex_unlock(&rwlock->mutex);
-    return 0;
-#else
     return pthread_rwlock_wrlock(rwlock);
-#endif
 }
 
 int platform_rwlock_unlock(pthread_rwlock_t* rwlock) {
-#ifdef _WIN32
-    platform_mutex_lock(&rwlock->mutex);
-    if (rwlock->writers_active > 0) {
-        // 写者解锁
-        rwlock->writers_active = 0;
-    } else if (rwlock->readers_active > 0) {
-        // 读者解锁
-        rwlock->readers_active--;
-    }
-
-    // 决定唤醒谁：写者优先策略
-    if (rwlock->writers_waiting > 0) {
-        // 仅当没有活跃读者时，才唤醒一个等待的写者
-        if (rwlock->readers_active == 0) {
-            platform_cond_signal(&rwlock->writer_cond);
-        }
-    } else if (rwlock->readers_active == 0) {
-        // 如果没有写者在等待，并且这是最后一个活跃的读者，就唤醒所有等待的读者
-        platform_cond_broadcast(&rwlock->readers_cond);
-    }
-    platform_mutex_unlock(&rwlock->mutex);
-    return 0;
-#else
     return pthread_rwlock_unlock(rwlock);
-#endif
 }
 
 int platform_cond_init(pthread_cond_t* cond, const pthread_condattr_t* attr) {
-    (void)attr; // 忽略属性参数
-#ifdef _WIN32
-    InitializeConditionVariable(cond);
-    return 0;
-#else
     return pthread_cond_init(cond, attr);
-#endif
 }
 
 int platform_cond_destroy(pthread_cond_t* cond) {
-#ifdef _WIN32
-    // Windows下ConditionVariable不需要显式销毁
-    (void)cond;
-    return 0;
-#else
     return pthread_cond_destroy(cond);
-#endif
 }
 
 int platform_cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex) {
-#ifdef _WIN32
-    if (!SleepConditionVariableCS(cond, mutex, INFINITE)) {
-        return GetLastError();
-    }
-    return 0;
-#else
     return pthread_cond_wait(cond, mutex);
-#endif
 }
 
 int platform_cond_timedwait(pthread_cond_t* cond, pthread_mutex_t* mutex, int timeout_ms) {
 #ifdef _WIN32
-    DWORD result = SleepConditionVariableCS(cond, mutex, (DWORD)timeout_ms);
-    if (!result) {
-        DWORD error = GetLastError();
-        if (error == ERROR_TIMEOUT) {
-            return 1; // 超时
-        }
+    // Windows下使用mingw64的pthread实现
+    struct timespec ts;
+    struct _timeb tb;
+    _ftime(&tb);
+    
+    ts.tv_sec = tb.time + timeout_ms / 1000;
+    ts.tv_nsec = (tb.millitm + (timeout_ms % 1000)) * 1000000;
+    
+    // 处理纳秒溢出
+    if (ts.tv_nsec >= 1000000000) {
+        ts.tv_sec++;
+        ts.tv_nsec -= 1000000000;
+    }
+    
+    int result = pthread_cond_timedwait(cond, mutex, &ts);
+    if (result == ETIMEDOUT) {
+        return 1; // 超时
+    } else if (result != 0) {
         return -1; // 其他错误
     }
     return 0; // 成功
@@ -261,62 +168,28 @@ int platform_cond_timedwait(pthread_cond_t* cond, pthread_mutex_t* mutex, int ti
 }
 
 int platform_cond_signal(pthread_cond_t* cond) {
-#ifdef _WIN32
-    WakeConditionVariable(cond);
-    return 0;
-#else
     return pthread_cond_signal(cond);
-#endif
 }
 
 int platform_cond_broadcast(pthread_cond_t* cond) {
-#ifdef _WIN32
-    WakeAllConditionVariable(cond);
-    return 0;
-#else
     return pthread_cond_broadcast(cond);
-#endif
 }
 
 int platform_thread_create(pthread_t* thread, const pthread_attr_t* attr, 
                           THREAD_RETURN_TYPE (*start_routine)(void*), void* arg) {
-    (void)attr; // 忽略属性参数
-#ifdef _WIN32
-    *thread = (HANDLE)_beginthreadex(NULL, 0, start_routine, arg, 0, NULL);
-    return (*thread == NULL) ? -1 : 0;
-#else
-    return pthread_create(thread, attr, start_routine, arg);
-#endif
+    return pthread_create(thread, attr, (void*(*)(void*))start_routine, arg);
 }
 
 int platform_thread_join(pthread_t thread, void** retval) {
-#ifdef _WIN32
-    (void)retval; // Windows下不支持获取返回值
-    DWORD result = WaitForSingleObject(thread, INFINITE);
-    if (result == WAIT_OBJECT_0) {
-        CloseHandle(thread);
-        return 0;
-    }
-    return -1;
-#else
     return pthread_join(thread, retval);
-#endif
 }
 
 int platform_thread_detach(pthread_t thread) {
-#ifdef _WIN32
-    return CloseHandle(thread) ? 0 : -1;
-#else
     return pthread_detach(thread);
-#endif
 }
 
 pthread_t platform_thread_self(void) {
-#ifdef _WIN32
-    return GetCurrentThread();
-#else
     return pthread_self();
-#endif
 }
 
 void platform_sleep_ms(int ms) {

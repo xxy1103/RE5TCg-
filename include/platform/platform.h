@@ -7,37 +7,14 @@
     #include <ws2tcpip.h>
     #include <windows.h>
     #include <process.h>
+    #include <pthread.h>  // 使用mingw64的pthread实现
     #pragma comment(lib, "ws2_32.lib")
-      // Windows线程类型定义
-    typedef HANDLE pthread_t;
-    typedef CRITICAL_SECTION pthread_mutex_t;
-    typedef CONDITION_VARIABLE pthread_cond_t;
-    typedef struct {
-        void* unused;
-    } pthread_attr_t;
-    typedef struct {
-        void* unused;
-    } pthread_mutexattr_t;
-    typedef struct {
-        void* unused;
-    } pthread_condattr_t;
     
-    // Windows读写锁结构体定义
-    typedef struct {
-        pthread_mutex_t mutex;          // 用于保护内部状态的互斥锁
-        pthread_cond_t  readers_cond;   // 等待的读者条件变量
-        pthread_cond_t  writer_cond;    // 等待的写者条件变量
-        unsigned int    readers_active; // 当前活跃的读者数量
-        unsigned int    writers_active; // 当前活跃的写者数量 (0或1)
-        unsigned int    writers_waiting;// 正在等待的写者数量
-    } pthread_rwlock_t;
+    // Windows下使用mingw64的pthread读写锁实现
+    // pthread_rwlock_t已在pthread.h中定义
     
-    typedef struct {
-        void* unused;
-    } pthread_rwlockattr_t;
-    
-    #define THREAD_RETURN_TYPE unsigned int __stdcall
-    #define THREAD_RETURN_VALUE 0
+    #define THREAD_RETURN_TYPE void*
+    #define THREAD_RETURN_VALUE NULL
 #else
     // Linux-specific includes
     #include <sys/socket.h>

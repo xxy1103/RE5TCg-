@@ -64,7 +64,6 @@ int task_queue_init(task_queue_t* queue, int capacity) {
         return MYERROR;
     }
 
-    log_info("任务队列初始化成功，容量：%d", capacity);
     return MYSUCCESS;
 }
 
@@ -205,7 +204,7 @@ void task_queue_destroy(task_queue_t* queue) {
         queue->tasks = NULL;
     }
 
-    log_info("任务队列已销毁");
+    log_debug("任务队列已销毁");
 }
 
 // ============================================================================
@@ -239,7 +238,7 @@ THREAD_RETURN_TYPE worker_thread_main(void* arg) {
         return THREAD_RETURN_VALUE;
     }
 
-    log_info("工作线程%d启动成功", worker->thread_index);
+    log_debug("工作线程%d启动成功", worker->thread_index);
     worker->is_active = 1;
 
     // 主工作循环
@@ -256,7 +255,7 @@ THREAD_RETURN_TYPE worker_thread_main(void* arg) {
 
         // 处理关闭任务
         if (task.type == TASK_SHUTDOWN) {
-            log_info("工作线程%d收到关闭信号", worker->thread_index);
+            log_debug("工作线程%d收到关闭信号", worker->thread_index);
             break;
         }
 
@@ -288,7 +287,7 @@ THREAD_RETURN_TYPE worker_thread_main(void* arg) {
     }
 
     worker->is_active = 0;
-    log_info("工作线程%d退出", worker->thread_index);
+    log_debug("工作线程%d退出", worker->thread_index);
     return THREAD_RETURN_VALUE;
 }
 
@@ -346,17 +345,9 @@ int thread_pool_init(dns_thread_pool_t* pool,
         return MYERROR;
     }
 
-    // 初始化互斥锁
-    if (platform_mutex_init(&pool->mapping_table_mutex, NULL) != 0) {
-        log_error("线程池初始化失败：映射表互斥锁初始化失败");
-        task_queue_destroy(&pool->task_queue);
-        free(pool->workers);
-        return MYERROR;
-    }
-
+    // 初始化必要的互斥锁（移除mapping_table_mutex，已使用分段锁）
     if (platform_mutex_init(&pool->socket_mutex, NULL) != 0) {
         log_error("线程池初始化失败：Socket互斥锁初始化失败");
-        platform_mutex_destroy(&pool->mapping_table_mutex);
         task_queue_destroy(&pool->task_queue);
         free(pool->workers);
         return MYERROR;
@@ -365,7 +356,6 @@ int thread_pool_init(dns_thread_pool_t* pool,
     if (platform_mutex_init(&pool->stats_mutex, NULL) != 0) {
         log_error("线程池初始化失败：统计互斥锁初始化失败");
         platform_mutex_destroy(&pool->socket_mutex);
-        platform_mutex_destroy(&pool->mapping_table_mutex);
         task_queue_destroy(&pool->task_queue);
         free(pool->workers);
         return MYERROR;
@@ -411,7 +401,7 @@ int thread_pool_start(dns_thread_pool_t* pool) {
     }
 
     pool->is_running = 1;
-    log_info("线程池启动成功，%d个工作线程已运行", pool->worker_count);
+    log_debug("线程池启动成功，%d个工作线程已运行", pool->worker_count);
     return MYSUCCESS;
 }
 
@@ -421,7 +411,7 @@ int thread_pool_stop(dns_thread_pool_t* pool, int timeout_ms) {
         return MYSUCCESS;
     }
 
-    log_info("开始停止线程池...");
+    log_debug("开始停止线程池...");
     pool->shutdown_requested = 1;
 
     // 向队列发送关闭任务
@@ -458,7 +448,7 @@ int thread_pool_stop(dns_thread_pool_t* pool, int timeout_ms) {
     }
 
     pool->is_running = 0;
-    log_info("线程池已停止");
+    log_debug("线程池已停止");
     return success ? MYSUCCESS : MYERROR;
 }
 
@@ -473,8 +463,7 @@ void thread_pool_destroy(dns_thread_pool_t* pool) {
     // 销毁任务队列
     task_queue_destroy(&pool->task_queue);
 
-    // 销毁互斥锁
-    platform_mutex_destroy(&pool->mapping_table_mutex);
+    // 销毁互斥锁（移除mapping_table_mutex，已使用分段锁）
     platform_mutex_destroy(&pool->socket_mutex);
     platform_mutex_destroy(&pool->stats_mutex);
 
@@ -487,7 +476,7 @@ void thread_pool_destroy(dns_thread_pool_t* pool) {
     // 清零结构体
     memset(pool, 0, sizeof(dns_thread_pool_t));
     
-    log_info("线程池已销毁");
+    log_debug("线程池已销毁");
 }
 
 // ============================================================================
@@ -549,7 +538,7 @@ void thread_pool_reset_stats(dns_thread_pool_t* pool) {
         pool->workers[i].processed_tasks = 0;
     }
 
-    log_info("线程池统计信息已重置");
+    log_debug("线程池统计信息已重置");
 }
 
 // ============================================================================
@@ -660,7 +649,7 @@ static void increment_stats_counter(dns_thread_pool_t* pool, const char* counter
 }
 
 // ============================================================================
-// 线程安全的映射表操作函数实现
+// 线程安全的映射表操作函数实现（分段锁优化版本）
 // ============================================================================
 
 int thread_pool_add_mapping_safe(unsigned short original_id, 
@@ -672,11 +661,8 @@ int thread_pool_add_mapping_safe(unsigned short original_id,
         return MYERROR;
     }
 
-    platform_mutex_lock(&g_thread_pool->mapping_table_mutex);
-    int result = add_mapping(g_thread_pool->mapping_table, original_id, client_addr, client_addr_len, new_id);
-    platform_mutex_unlock(&g_thread_pool->mapping_table_mutex);
-
-    return result;
+    // 分段锁版本：不需要全局锁，内部使用分段锁实现并发控制
+    return add_mapping(g_thread_pool->mapping_table, original_id, client_addr, client_addr_len, new_id);
 }
 
 dns_mapping_entry_t* thread_pool_find_mapping_safe(unsigned short new_id) {
@@ -685,11 +671,8 @@ dns_mapping_entry_t* thread_pool_find_mapping_safe(unsigned short new_id) {
         return NULL;
     }
 
-    platform_mutex_lock(&g_thread_pool->mapping_table_mutex);
-    dns_mapping_entry_t* mapping = find_mapping_by_new_id(g_thread_pool->mapping_table, new_id);
-    platform_mutex_unlock(&g_thread_pool->mapping_table_mutex);
-
-    return mapping;
+    // 分段锁版本：不需要全局锁，使用分段读锁实现高并发查找
+    return find_mapping_by_new_id(g_thread_pool->mapping_table, new_id);
 }
 
 void thread_pool_remove_mapping_safe(unsigned short new_id) {
@@ -698,9 +681,8 @@ void thread_pool_remove_mapping_safe(unsigned short new_id) {
         return;
     }
 
-    platform_mutex_lock(&g_thread_pool->mapping_table_mutex);
+    // 分段锁版本：不需要全局锁，使用分段写锁实现安全删除
     remove_mapping(g_thread_pool->mapping_table, new_id);
-    platform_mutex_unlock(&g_thread_pool->mapping_table_mutex);
 }
 
 void thread_pool_cleanup_mappings_safe(void) {
@@ -709,7 +691,6 @@ void thread_pool_cleanup_mappings_safe(void) {
         return;
     }
 
-    platform_mutex_lock(&g_thread_pool->mapping_table_mutex);
+    // 分段锁版本：不需要全局锁，使用分段并行清理
     cleanup_expired_mappings(g_thread_pool->mapping_table);
-    platform_mutex_unlock(&g_thread_pool->mapping_table_mutex);
 }
